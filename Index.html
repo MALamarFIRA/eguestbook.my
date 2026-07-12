@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Wedding Guestbook</title>
+<style>
+    :root {
+      --primary: #000000; 
+      --bg-color: #f4f6f8; 
+      --card-bg: #ffffff;
+      --text-main: #000000; 
+      --text-muted: #2d3748; 
+      --border-color: #a0aec0; 
+      --btn-menu-bg: #ffffff;
+      --btn-menu-border: #000000;
+      --btn-danger-bg: #fee2e2;
+      --btn-danger-text: #991b1b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      width: 100%;
+      min-height: 100vh;
+      overflow-x: hidden; 
+      overflow-y: auto; 
+      /* 📱 INCREASE RESILIENT TOP BUFFER FOR IFRAME NOTCH CAPS */
+      padding: 34px 16px 20px 16px; 
+      box-sizing: border-box;
+    }
+
+    /* Standard app container optimized for single screen viewport height execution */
+    .app-screen {
+      width: 100%;
+      max-width: 420px; 
+      min-height: 100%;
+      margin: 0 auto;
+      text-align: center; 
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start; 
+      /* 📱 Gives extra breathing room below the notch before content starts */
+      gap: 20px;                   
+      align-items: center;
+    }
+
+    h1 {
+      color: #000000;
+      font-size: 24px; /* Slightly compacted to protect layout boundary thresholds */
+      font-weight: 500;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+      margin-bottom: 2px;
+    }
+
+    p {
+      color: var(--text-muted);
+      font-size: 14px; 
+      font-weight: 300;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+    
+    /* Dynamically adapts based on leftover screen runtime room */
+    .glass-container {
+      width: 100%;
+      flex: 1;
+      min-height: 100px;
+      max-height: 240px;
+      border-radius: 12px;
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .welcome-img {
+      width: 100%;
+      height: 100%; 
+      object-fit: cover; 
+      border-radius: 11px;
+    }
+
+    .action-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px; 
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 14px; 
+      border: 3px solid var(--border-color); 
+      border-radius: 14px;
+      font-size: 16px; 
+      font-weight: 700;
+      background-color: #ffffff;
+      color: var(--text-main);
+      outline: none;
+      text-align: center; 
+    }
+
+    textarea {
+      width: 100% !important;
+      min-height: 120px;
+      max-height: 140px;
+      resize: none;
+      text-align: left;
+    }
+    
+    button {
+      width: 100%;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 14px; 
+      font-size: 16px; 
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+
+    button:active {
+      opacity: 0.8;
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      background-color: #718096 !important;
+      color: #edf2f7 !important;
+      cursor: not-allowed !important;
+      opacity: 0.7;
+      transform: none !important;
+    }
+    
+    .menu-btn {
+      background-color: var(--btn-menu-bg);
+      color: #000000;
+      border: 3px solid var(--btn-menu-border);
+    }
+    
+    .danger-btn {
+      background-color: var(--btn-danger-bg);
+      color: var(--btn-danger-text);
+      border: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .status {
+      margin-top: 4px;
+      font-weight: 800;
+      color: #000000;
+      font-size: 14px;
+    }
+
+    .text-link {
+      color: #000000;
+      font-size: 14px; 
+      text-decoration: underline;
+      background: none;
+      border: none;
+      width: auto;
+      display: inline-block;
+      padding: 4px 12px;
+      margin-top: 4px;
+      font-weight: 700;
+    }
+
+    .gate-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-color);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    /* Fixed Aspect Previews optimized for variable single heights */
+    .preview-frame-holder {
+      width: 100%;
+      flex: 1;
+      min-height: 120px;
+      max-height: 200vh;
+      background: #e2e8f0;
+      border-radius: 14px;
+      margin: 6px 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .preview-frame-holder img, .preview-frame-holder video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; 
+      object-position: center;
+    }
+
+    .preview-hint-tag {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      pointer-events: none;
+      font-weight: 700;
+      z-index: 10;
+    }
+
+    /* ALBUM VIEW CONTAINER: ALLOWED TO SCROLL AS REQUESTED */
+    .album-view-container {
+      width: 100%;
+      max-width: 420px;          
+      margin: 0 auto;            
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto !important; /* Explicitly permitting infinite feed scrolls here */
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .album-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      width: 100%;
+      padding: 6px;
+      padding-bottom: 24px;
+      justify-content: center;   
+    }
+
+    .album-card {
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .media-window {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #000000;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .media-window img, .media-window video {
+      width: 100%;
+      height: 100%; 
+      object-fit: cover;
+      display: block;
+    }
+
+    .expand-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      z-index: 5;
+    }
+
+    .card-info {
+      padding: 4px;
+      background: var(--card-bg);
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch; 
+    }
+
+    .card-info h4 {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.2;
+      margin-bottom: 2px;
+      white-space: normal;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      text-align: center; 
+    }
+
+    .card-info p {
+      margin: 0;
+      font-style: italic;
+      font-size: 9px;
+      color: var(--text-muted);
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      text-align: center; 
+    }
+
+    .text-only-card .media-window {
+      display: none;
+    }
+
+    .text-only-card {
+      aspect-ratio: 1 / 1.3; 
+    }
+
+    .text-only-card .card-info {
+      padding: 6px;
+    }
+
+    .text-only-card .card-info p {
+      -webkit-line-clamp: 5; 
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset:0;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      flex-direction:column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      width: min(100%, 360px);
+      max-width: 360px;
+      border-radius: 16px;
+      overflow: hidden;
+      /* FIX: Removed native border to completely prevent Safari corner rendering glitches */
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      animation: modalScale 0.2s ease-out;
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
+      isolation: isolate;
+      position: relative; /* Crucial anchor for the border frame layer overlay */
+    }
+
+    /* THE BULLETPROOF IOS SAFARI BORDER OVERLAY MASTER LOCK */
+    .modal-content::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: 3px solid #000000; /* Draws a razor-sharp black frame layer */
+      border-radius: 16px;
+      pointer-events: none; /* Allows guests to click buttons right through the overlay border frame */
+      z-index: 9999; /* Forces the black border line completely on top of image and blur layers */
+    }
+
+    @keyframes modalScale {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-media {
+      width: 100%;
+      background: #000000 !important;
+      max-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      
+      /* Reset inner radii back to full 16px since the frame sits directly over it now */
+      border-top-left-radius: 16px !important; 
+      border-top-right-radius: 16px !important;
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
+    }
+
+    .modal-media-blur-bg {
+      position: absolute;
+      top: -10%;
+      left: -10%;
+      width: 120%;
+      height: 120%;
+      object-fit: cover;
+      filter: blur(15px) brightness(0.6);
+      -webkit-filter: blur(15px) brightness(0.6);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .modal-media img.fg-media, .modal-media video.fg-media {
+      width: 100%;
+      object-fit: contain;
+      position: relative;
+      z-index: 2;
+      
+      /* Match the uniform 16px curve parameters */
+      border-top-left-radius: 16px !important;
+      border-top-right-radius: 16px !important;
+    }
+
+    .modal-body {
+      padding: 20px;
+      max-height: 200px;
+      overflow-y: auto;
+      background: var(--card-bg); /* Explicitly secures standard card color profile */
+    }
+
+    .modal-body h3 {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      text-align: center; 
+    }
+
+    .modal-body p {
+      font-size: 15px;
+      font-style: italic;
+      line-height: 1.4;
+      color: var(--text-muted);
+      margin: 0;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+      text-align: center; 
+    }
+
+    .modal-close {
+      background: var(--primary);
+      color: #fff;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      border-top: 2px solid var(--border-color);
+    }
+
+    /* Floating Navigation Arrow Styles (Clean Outside Separation) */
+    .nav-arrow-btn {
+      flex-shrink: 0;
+
+      width: 44px;
+      height: 44px;
+      background: rgba(255,255,255,.25);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+
+      color:#000;
+      border:1px solid rgba(255,255,255,.4);
+      border-radius:50%;
+
+      font-size:28px;
+      font-weight:300;
+
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      box-shadow:0 4px 10px rgba(0,0,0,.3);
+
+      cursor:pointer;
+      user-select:none;
+      padding:0;
+    }
+
+    .nav-arrow-btn:active {
+      background: rgba(255, 255, 255, 0.5);
+      transform: scale(0.92);
+    }
+
+    /* Hide arrows if we reach the absolute boundaries */
+    .nav-arrow-btn:disabled {
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Floating Save Button Outside Layout Wrapper */
+    #downloadBtnWrapper {
+      position: absolute;
+      top: max(16px, env(safe-area-inset-top));
+      left: 16px;
+      z-index: 1050;
+    }
+
+    #modalDownloadBtn {
+      margin-top: 16px;
+
+      width: 180px;
+      height: 44px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.2);
+
+      background: rgba(75, 76, 76, 1);
+      color: #fff;
+
+      font-size: 13px;
+      font-weight: 700;
+
+      cursor: pointer;
+
+      box-shadow: 0 4px 12px rgba(0,0,0,.3);
+    }
+
+    /* Disable long-press menus and drag-saving for media elements */
+    img, video, .media-window, .modal-media, .preview-frame-holder {
+      -webkit-touch-callout: none !important; /* Disables the long-press popover menu on iOS Safari */
+      -webkit-user-select: none !important;   /* Safari */
+      -khtml-user-select: none !important;    /* Konqueror HTML */
+      -moz-user-select: none !important;     /* Firefox */
+      -ms-user-select: none !important;      /* Internet Explorer/Edge */
+      user-select: none !important;           /* Standard syntax */
+      -webkit-user-drag: none !important;    /* Prevents dragging images out of the browser container */
+      user-drag: none !important;
+    }
+
+    /* 🎯 ONE-HANDED ACCESSIBILITY VERTICAL CENTER LAYER */
+    .vertical-center-zone {
+      display: flex;
+      flex-direction: column;
+      justify-content: center; /* Drops the layout from the top to the middle thumb zone */
+      align-items: center;
+      width: 100%;
+      flex: 1; /* Absorbs the center space dynamically */
+      gap: 16px;
+    }
+
+    /* 🎯 PERFECT MID-SCREEN HUB FOR ONE-HANDED ACCESSIBILITY */
+    .screen-center-hub {
+      display: flex;
+      flex-direction: column;
+      justify-content: center; /* Locks items exactly to the vertical middle */
+      align-items: center;    /* Keeps everything centered horizontally */
+      width: 100%;
+      max-width: 340px;       /* Keeps uniform button widths */
+      flex: 1;                /* Absorbs all extra space evenly */
+      gap: 16px;              /* Clean spacing between elements */
+      margin: 0 auto;
+    }
+
+    /* Hide native browser scrollbars inside the swipe element */
+    #filterCarousel::-webkit-scrollbar {
+      display: none !important;
+    }
+    #filterCarousel {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* 💊 SLEEK, SMALL PILL SPECIFICATIONS */
+    #filterCarousel .filter-btn {
+      flex: 0 0 90px;
+      width: 90px;
+      height: 36px;
+      padding: 0;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 18px; /* Creates the perfect pill look */
+      border: 1px solid #cbd5e0;
+      background: #ffffff;
+      color: #718096;
+      cursor: pointer;
+      scroll-snap-align: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: scale(0.9);
+      opacity: 0.6;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    /* 🔥 MID-SCREEN HIGHLIGHTED PILL STATE */
+    #filterCarousel .filter-btn.active {
+      background: #000000 !important;
+      color: #ffffff !important;
+      border-color: #000000 !important;
+      transform: scale(1.05);
+      opacity: 1;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-viewer{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:12px;
+
+        width:100%;
+        max-width:480px;
+    }
+
+    
+  /* Modern CSS Circular Spinner */
+  .shield-loader-ring {
+    display: inline-block;
+    width: 45px;
+    height: 45px;
+    border: 4px solid #e2e8f0;       /* Light gray background track */
+    border-radius: 50%;
+    border-top-color: #3182ce;   /* Elegant blue accent color for the spinning dot/dash */
+    animation: shieldSpin 0.8s linear infinite;
+  }
+
+  @keyframes shieldSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  </style>
+</head>
+<body>
+
+  <div id="initialGate" class="gate-overlay">
+    <div class="app-screen" style="justify-content: center; gap: 20px;">
+      <div>
+        <h1>Welcome!</h1>
+        <p style="margin-bottom: 0;">Please enter your name to view and share memories.</p>
+      </div>
+      
+      <div class="action-container">
+        <input type="text" id="globalName" placeholder="Type your name here..." autocomplete="name" required>
+        <button id="gateSubmitBtn" onclick="submitInitialGate()">Enter Guestbook</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="welcomePage" class="app-screen">
+    <div style="width: 100%;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 4px;">
+        <h1 id="personalizedGreeting" style="margin: 0;">Wedding Guestbook</h1>
+        <span style="color: var(--text-muted); font-size: 12px; opacity: 0.5;">|</span>
+        <button class="text-link" style="margin: 0; padding: 0; font-size: 14px; color: var(--text-muted); font-weight: 700; text-decoration: none;" onclick="enableNameChange()">
+          ✏️
+        </button>
+      </div>
+      <p style="font-size: 28px; color: #000000; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.2px;">
+        Welcome to Our Wedding
+      </p>
+
+      <div style="font-family: 'Georgia', 'Apple Chancery', 'Comic Sans MS', cursive; font-size: 26px; font-style: italic; font-weight: 500; color: #1a202c; margin-bottom: 6px; display: inline-block;">
+        Akmal & Musfirah
+      </div>
+
+      <p>Please share your blessings and memories with us today.</p>
+    </div>
+    
+    <div class="glass-container">
+      <img class="welcome-img" src="https://lh3.googleusercontent.com/d/1w-vRs2hl2YtY1IqRdBLrVzoHdJgtVxPO" alt="Wedding Picture">
+    </div>
+    
+    <div class="action-container" style="margin-top: 4px;">
+      <button onclick="openFeature('camera')">📸 Start Camera / Upload</button>
+      <button class="menu-btn" onclick="openFeature('video')">🎥 Record a Video Note (Max 30s)</button>
+      <button class="menu-btn" onclick="openFeature('note')">✍️ Write a Note</button>
+      <button class="text-link" onclick="navigateTo('albumPage'); loadAlbum();">View Guestbook Album ➔</button>
+    </div>
+  </div>
+
+  <div id="cameraPage" class="app-screen hidden" style="display: flex; flex-direction: column; min-height: 80vh;">
+    
+    <div style="width: 100%;">
+      <h1>Capture Moment</h1>
+      <p>Choose an action below to add your photo memory.</p>
+    </div>
+    
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="previewImage('cameraInput')">
+    <input type="file" id="albumInput" accept="image/jpeg, image/png" style="display:none;" onchange="previewImage('albumInput')">
+    
+    <div class="screen-center-hub">
+      
+      <div id="sourceSelection" class="action-container" style="width: 100%; display: flex; flex-direction: column; gap: 12px; margin: 0;">
+        <button onclick="document.getElementById('cameraInput').click()" style="width: 100%;">📸 Snap Live Photo</button>
+        <button class="menu-btn" onclick="document.getElementById('albumInput').click()" style="width: 100%;">🖼️ Open Photo Album</button>
+        <button class="text-link" style="margin-top: 8px; align-self: center;" onclick="navigateTo('welcomePage')">← Back to Menu</button>
+      </div>
+      
+      <div id="photoWorkflow" class="hidden" style="width:100%; display: flex; flex-direction: column; gap: 14px; margin: 0;">
+        
+        <div id="photoPreviewHolder" class="preview-frame-holder" onclick="openPreSubmissionPreview('Photo')" style="max-height: 100%; height: 240px; width: 100%; border-radius: 16px; overflow: hidden; position: relative; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+          <img id="imagePreview" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+          <div class="preview-hint-tag" style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #fff; padding: 4px 8px; border-radius: 12px; font-size: 11px; backdrop-filter: blur(4px);">🔍 Preview</div>
+        </div>
+        
+        <div style="width: 100%; overflow: hidden;">
+          <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 700; color: #4a5568; text-align: center;">✨ Choose a Filter:</p>
+          <div id="filterCarousel" style="display: flex; gap: 12px; overflow-x: auto; padding: 8px 0; width: 100%; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; box-sizing: border-box;">
+            <div style="flex: 0 0 calc(50% - 45px); pointer-events: none;"></div>
+            <button type="button" class="filter-btn active" data-filter="none" onclick="this.scrollIntoView({ inline: 'center', behavior: 'smooth' })">Original</button>
+            <button type="button" class="filter-btn" data-filter="rosy" onclick="this.scrollIntoView({ inline: 'center', behavior: 'smooth' })">🌸 Rosy</button>
+            <button type="button" class="filter-btn" data-filter="vintage" onclick="this.scrollIntoView({ inline: 'center', behavior: 'smooth' })">📸 Retro</button>
+            <button type="button" class="filter-btn" data-filter="warm" onclick="this.scrollIntoView({ inline: 'center', behavior: 'smooth' })">☀️ Warm</button>
+            <button type="button" class="filter-btn" data-filter="fairytale" onclick="this.scrollIntoView({ inline: 'center', behavior: 'smooth' })">🦄 Dreamy</button>
+            <div style="flex: 0 0 calc(50% - 45px); pointer-events: none;"></div>
+          </div>
+        </div>
+
+        <textarea id="photoWishes" placeholder="Write your sweet wishes here... (Optional)" style="margin: 2px 0; width: 100%; min-height: 70px; box-sizing: border-box;"></textarea>
+        
+        <div class="action-container" style="gap: 8px; width: 100%;">
+          <button id="photoSubmitBtn" onclick="uploadPhotoPost()">🎉 Share to Album</button>
+          <button id="photoChangeBtn" class="danger-btn" onclick="resetPhotoWorkflow()">🔄 Change Photo</button>
+        </div>
+        
+        <button id="noteBackBtn" class="text-link" style="margin-top: 4px; align-self: center;" onclick="navigateTo('welcomePage')">← Back to Menu</button>
+      </div>
+
+    </div>
+    
+    <div id="cameraStatus" class="status"></div>
+  </div>
+
+  <div id="videoPage" class="app-screen hidden">
+    <div>
+      <h1>Video Guestbook</h1>
+      <p>Review your video clip below and share it!</p>
+    </div>
+    
+    <input type="file" id="videoFileInput" accept="video/*" capture="user" style="display:none;" onchange="previewVideoFile()">
+
+    <div id="videoWorkflow" style="width: 100%; max-width: 340px; display: flex; flex-direction: column; overflow:hidden;">
+      <div id="photoPreviewHolder" class="preview-frame-holder" onclick="openPreSubmissionPreview('Video Note')">
+        <video id="videoPreview" autoplay muted loop playsinline></video>
+        <div class="preview-hint-tag">🔍 Tap to Expand</div>
+      </div>
+      <textarea id="videoWishes" placeholder="Write a short note or caption here... (Optional)" style="margin: 6px 0; width: 100%;"></textarea>
+      <div class="action-container">
+        <button id="videoSubmitBtn" onclick="uploadVideoPost()">🚀 Submit Video</button>
+        <button id="videoRetakeBtn" class="danger-btn" onclick="triggerDirectVideoCamera()">🔄 Retake Video</button>
+      </div>
+      <button id="noteBackBtn" class="text-link" style="margin-top: 8px; align-self: center;" onclick="navigateTo('welcomePage')">← Back to Menu</button>
+    </div>
+    
+    <div id="videoStatus" class="status"></div>
+  </div>
+
+  <div id="notePage" class="app-screen hidden" style="display: flex; flex-direction: column; min-height: 80vh;">
+    
+    <div style="width: 100%;">
+      <h1>Write a Note</h1>
+      <p>Leave your wedding blessings or love notes here.</p>
+    </div>
+    
+    <div class="screen-center-hub">
+      <textarea id="writtenNote" placeholder="Write something beautiful for the newlyweds..." style="width: 100%; height: 150px; max-height: 180px; box-sizing: border-box; resize: none; margin: 0;"></textarea>
+      
+      <div class="action-container" style="margin: 0; width: 100%;">
+        <button id="noteSubmitBtn" onclick="uploadTextPost()">Submit Note</button>
+      </div>
+      
+      <button id="noteBackBtn" class="text-link" style="margin: 4px 0 0 0; align-self: center;" onclick="navigateTo('welcomePage')">← Back to Menu</button>
+    </div>
+    
+    <div id="noteStatus" class="status"></div>
+  </div>
+
+  <div id="albumPage" class="album-view-container hidden">
+    <div style="text-align: center; padding: 12px 0 6px 0;">
+      <h1>Guestbook Feed</h1>
+      <p style="margin-bottom: 8px;">Beautiful moments shared by loved ones.</p>
+      <button class="menu-btn" style="padding: 10px; font-size: 15px; border-radius: 12px; max-width: 340px; margin: 0 auto;" onclick="navigateTo('welcomePage')">← Back to Main Menu</button>
+    </div>
+    <div id="albumGrid" class="album-grid">Loading memories...</div>
+  </div>
+
+  <div id="cardModal" class="modal-overlay hidden" onclick="closeModal()">
+
+      <div class="modal-viewer" onclick="event.stopPropagation()">
+
+          <button id="modalPrevBtn"
+                  class="nav-arrow-btn"
+                  onclick="navigateModalDeck(-1, event)">
+              ‹
+          </button>
+
+          <div class="modal-content">
+
+              <div id="modalMediaWindow" class="modal-media"></div>
+
+              <div class="modal-body">
+                  <h3 id="modalNameTarget">Name</h3>
+                  <p id="modalWishesTarget">Wishes</p>
+              </div>
+
+              <button class="modal-close" onclick="closeModal()">
+                  Close Panel ✕
+              </button>
+
+          </div>
+
+          <button id="modalNextBtn"
+                  class="nav-arrow-btn"
+                  onclick="navigateModalDeck(1, event)">
+              ›
+          </button>
+
+      </div>
+
+      
+
+      <button id="modalDownloadBtn"
+          onclick="triggerGuestDownload(event)">
+          📥 Download
+      </button>
+
+  </div>
+
+<script>
+
+  document.getElementById('filterCarousel').addEventListener('scroll', function() {
+    clearTimeout(this.scrollTimeout);
+    
+    this.scrollTimeout = setTimeout(() => {
+      const carousel = this;
+      const buttons = carousel.querySelectorAll('.filter-btn');
+      const carouselCenter = carousel.getBoundingClientRect().left + (carousel.offsetWidth / 2);
+      
+      let closestButton = null;
+      let minDistance = Infinity;
+      
+      buttons.forEach(btn => {
+        const btnCenter = btn.getBoundingClientRect().left + (btn.offsetWidth / 2);
+        const distance = Math.abs(carouselCenter - btnCenter);
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestButton = btn;
+        }
+      });
+      
+      if (closestButton && !closestButton.classList.contains('active')) {
+        buttons.forEach(b => b.classList.remove('active'));
+        closestButton.classList.add('active');
+        
+        const targetFilter = closestButton.getAttribute('data-filter');
+        // Fires the actual canvas background filter swap only when centered
+        if (typeof applyFilterStyle === 'function') {
+          applyFilterStyle(targetFilter, closestButton);
+        }
+      }
+    }, 40);
+  }); 
+
+    let compressedImageBase64 = null;
+    let videoBlobBase64 = null;
+    let localVideoFileObject = null; 
+    let loadedItemsCache = [];
+    let currentModalIndex = null;
+
+    // High-Performance Utility to bypass Android/Chrome Base64 memory pipeline locks
+    function base64ToBlobUrl(base64Data) {
+      if (!base64Data || !base64Data.startsWith('data:')) return base64Data;
+      try {
+        const parts = base64Data.split(',');
+        const mime = parts[0].match(/:(.*?);/)[1];
+        const bstr = atob(parts[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        const blob = new Blob([u8arr], { type: mime });
+        return URL.createObjectURL(blob);
+      } catch (e) {
+        console.error("Base64 translation aborted:", e);
+        return base64Data;
+      }
+    }
+
+    function navigateTo(pageId) {
+      const pages = ['welcomePage', 'cameraPage', 'videoPage', 'notePage', 'albumPage'];
+      pages.forEach(p => document.getElementById(p).classList.add('hidden'));
+      document.getElementById(pageId).classList.remove('hidden');
+    }
+
+    function submitInitialGate() {
+      const name = document.getElementById('globalName').value.trim();
+      if (!name) { alert("Please enter your name to enter the guestbook."); return; }
+      document.getElementById('personalizedGreeting').innerText = `Hi, ${name}!`;
+      document.getElementById('initialGate').classList.add('hidden');
+    }
+
+    function enableNameChange() {
+      document.getElementById('initialGate').classList.remove('hidden');
+      const gateBtn = document.getElementById('gateSubmitBtn');
+      if (gateBtn) {
+        gateBtn.innerText = "Update Name ➔";
+      }
+      document.getElementById('globalName').focus();
+    }
+
+    function openFeature(featureName) {
+      if (featureName === 'camera') { navigateTo('cameraPage'); resetPhotoWorkflow(); }
+      if (featureName === 'video') { triggerDirectVideoCamera(); }
+      if (featureName === 'note') { navigateTo('notePage'); document.getElementById('writtenNote').value = ''; }
+    }
+
+    function resetPhotoWorkflow() {
+      document.getElementById('photoWorkflow').classList.add('hidden');
+      document.getElementById('sourceSelection').style.display = 'flex';
+      document.getElementById('cameraInput').value = '';
+      document.getElementById('albumInput').value = '';
+      document.getElementById('photoWishes').value = '';
+      document.getElementById('cameraStatus').innerText = '';
+      
+      const subBtn = document.getElementById('photoSubmitBtn');
+      subBtn.disabled = false;
+      subBtn.innerText = "🎉 Share to Album";
+      document.getElementById('photoChangeBtn').disabled = false;
+      
+      compressedImageBase64 = null;
+    }
+
+  // New Global Tracker for selected image properties
+  let rawSelectedImageSrc = null;
+  let currentSelectedFilter = 'none';
+
+  function resetPhotoWorkflow() {
+    document.getElementById('photoWorkflow').classList.add('hidden');
+    document.getElementById('sourceSelection').style.display = 'flex';
+    document.getElementById('cameraInput').value = '';
+    document.getElementById('albumInput').value = '';
+    document.getElementById('photoWishes').value = '';
+    document.getElementById('cameraStatus').innerText = '';
+    
+    if (document.getElementById('imagePreview')) document.getElementById('imagePreview').style.filter = 'none';
+    
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    const fallbackBtn = document.querySelector(".filter-btn[onclick*='none']");
+    if(fallbackBtn) fallbackBtn.classList.add('active');
+
+    const subBtn = document.getElementById('photoSubmitBtn');
+    subBtn.disabled = false;
+    subBtn.innerText = "🎉 Share to Album";
+    document.getElementById('photoChangeBtn').disabled = false;
+    
+    compressedImageBase64 = null;
+    rawSelectedImageSrc = null;
+    currentSelectedFilter = 'none';
+  }
+
+  function previewImage(inputId) {
+    const fileInput = document.getElementById(inputId);
+    const statusDiv = document.getElementById('cameraStatus');
+    // 🎡 FORCE FILTER CAROUSEL RESET ON NEW IMAGE LOAD
+    const carousel = document.getElementById('filterCarousel');
+    if (carousel) {
+      // Clear any active state highlights
+      const buttons = carousel.querySelectorAll('.filter-btn');
+      buttons.forEach(b => b.classList.remove('active'));
+      
+      // Re-highlight the first button ("Original")
+      const originalBtn = carousel.querySelector('[data-filter="none"]');
+      if (originalBtn) originalBtn.classList.add('active');
+      
+      // Smoothly center the first pill back into the sweet spot
+      setTimeout(() => {
+        carousel.scrollTo({ left: 0, behavior: 'smooth' });
+      }, 100);
+    }
+    if (!fileInput.files[0]) return;
+
+    statusDiv.innerText = "Processing image...";
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+      rawSelectedImageSrc = e.target.result; // Save original un-filtered image safely
+      currentSelectedFilter = 'none';        // Reset vibe tracker
+      
+      // Pass to compilation engine
+      renderFilteredBase64();
+      
+      document.getElementById('sourceSelection').style.display = 'none';
+      document.getElementById('photoWorkflow').classList.remove('hidden');
+      statusDiv.innerText = "";
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Handles switching filter buttons and applying CSS rules on the live preview frame
+  function applyFilterStyle(filterType, element) {
+    currentSelectedFilter = filterType;
+    
+    // Update UI active styling highlights
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.classList.remove('active');
+      btn.style.borderColor = '#cbd5e0';
+      btn.style.background = '#ffffff';
+    });
+    element.classList.add('active');
+    element.style.borderColor = '#4a5568';
+    element.style.background = '#edf2f7';
+
+    // Apply real-time visual CSS rules to screen item
+    const imgPreview = document.getElementById('imagePreview');
+    if (!imgPreview) return;
+
+    if (filterType === 'none') imgPreview.style.filter = 'none';
+    if (filterType === 'rosy') imgPreview.style.filter = 'saturate(1.2) hue-rotate(-10deg) brightness(1.05)';
+    if (filterType === 'vintage') imgPreview.style.filter = 'sepia(0.35) contrast(0.95) saturate(0.85)';
+    if (filterType === 'warm') imgPreview.style.filter = 'sepia(0.15) saturate(1.3) warmth(1.1) brightness(1.02)'; // Custom simulation combination
+    if (filterType === 'fairytale') imgPreview.style.filter = 'contrast(0.9) brightness(1.1) saturate(1.15) hue-rotate(10deg)';
+
+    // Process and re-bake final output asset coordinates dynamically
+    renderFilteredBase64();
+  }
+
+
+  function renderFilteredBase64() {
+    if (!rawSelectedImageSrc) return;
+
+    const img = new Image();
+    img.src = rawSelectedImageSrc;
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      const MAX_SIZE = 1200;
+
+      if (width > height && width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+      else if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+
+      // 1. Draw the clean background photo asset layer first
+      ctx.filter = 'none';
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Inner processing function to handle the pixel manipulations
+      function processFiltersAndExport() {
+        // 3. ✨ APPLY FILTER TO EVERYTHING (Photo + Frame combined)
+        if (currentSelectedFilter !== 'none') {
+          const imgData = ctx.getImageData(0, 0, width, height);
+          const data = imgData.data;
+
+          for (let i = 0; i < data.length; i += 4) {
+            let r = data[i];
+            let g = data[i + 1];
+            let b = data[i + 2];
+
+            if (currentSelectedFilter === 'warm') {
+              data[i]     = Math.min(255, r * 1.1); 
+              data[i + 1] = Math.min(255, g * 1.03);
+            } 
+            else if (currentSelectedFilter === 'vintage') {
+              data[i]     = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));
+              data[i + 1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168));
+              data[i + 2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131));
+            } 
+            else if (currentSelectedFilter === 'rosy') {
+              data[i]     = Math.min(255, r * 1.15);
+              data[i + 1] = Math.min(255, g * 0.95);
+              data[i + 2] = Math.min(255, b * 1.05);
+            } 
+            else if (currentSelectedFilter === 'fairytale') {
+              data[i]     = Math.min(255, (r * 0.9) + 30);
+              data[i + 1] = Math.min(255, (g * 0.9) + 25);
+              data[i + 2] = Math.min(255, (b * 0.9) + 35);
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+        }
+
+        // 4. Export final compiled image
+        compressedImageBase64 = canvas.toDataURL('image/jpeg', 0.85);
+        document.getElementById('imagePreview').src = compressedImageBase64;
+      }
+
+      // Draw the original image
+      ctx.filter = 'none';
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Apply the selected filter
+      processFiltersAndExport();
+
+    };
+  }
+
+    function uploadPhotoPost() {
+      const name = document.getElementById('globalName').value;
+      const wishes = document.getElementById('photoWishes').value;
+      
+      const shield = document.getElementById('uploadShieldModal');
+      const shieldText = document.getElementById('shieldStatusHeader');
+      
+      // 🔒 FORCE SYSTEM OVERRIDE OPEN
+      if (shield) {
+        if (shieldText) shieldText.innerText = "Sharing your photo... 📸";
+        shield.style.setProperty('display', 'flex', 'important');
+      } else {
+        console.error("Critical Failure: uploadShieldModal element was not found in the DOM.");
+      }
+      
+      google.script.run.withSuccessHandler(res => {
+        if(res.success) {
+          if (shieldText) shieldText.innerText = "Uploaded successfully! 🎉";
+          setTimeout(() => { 
+            if (shield) shield.style.setProperty('display', 'none', 'important');
+            resetPhotoWorkflow();
+            navigateTo('albumPage');
+            loadAlbum();
+          }, 1500);
+        } else { 
+          alert("Error: " + res.error);
+          if (shield) shield.style.setProperty('display', 'none', 'important');
+        }
+      }).uploadData({ type: "Photo", name: name, wishes: wishes, image: compressedImageBase64 });
+    }
+
+    function triggerDirectVideoCamera() {
+      videoBlobBase64 = null;
+      localVideoFileObject = null;
+      document.getElementById('videoFileInput').value = '';
+      document.getElementById('videoWishes').value = '';
+      document.getElementById('videoStatus').innerText = '';
+      
+      const subBtn = document.getElementById('videoSubmitBtn');
+      subBtn.disabled = false;
+      subBtn.innerText = "🚀 Submit Video";
+      document.getElementById('videoRetakeBtn').disabled = false;
+      
+      document.getElementById('videoFileInput').click();
+    }
+
+    function previewVideoFile() {
+      const fileInput = document.getElementById('videoFileInput');
+      const statusDiv = document.getElementById('videoStatus');
+      
+      if (!fileInput.files[0]) {
+        navigateTo('welcomePage');
+        return;
+      }
+
+      statusDiv.innerText = "Analyzing file details...";
+      const tempFile = fileInput.files[0];
+
+      const videoElementChecker = document.createElement('video');
+      videoElementChecker.preload = 'metadata';
+      videoElementChecker.src = URL.createObjectURL(tempFile);
+
+      videoElementChecker.onloadedmetadata = function() {
+        URL.revokeObjectURL(videoElementChecker.src);
+        const duration = videoElementChecker.duration;
+        const previewEl = document.getElementById('videoPreview');
+        
+        if (duration > 30) {
+          statusDiv.innerText = "Trimming video to 30 seconds maximum...";
+          previewEl.ontimeupdate = function() {
+            if (previewEl.currentTime >= 30) {
+              previewEl.currentTime = 0;
+            }
+          };
+          alert("Your video clip exceeds 30 seconds! We have automatically accepted the first 30 seconds of your recording.");
+        } else {
+          previewEl.ontimeupdate = null;
+        }
+
+        localVideoFileObject = tempFile;
+        const reader = new FileReader();
+
+        reader.onloadend = function() {
+          videoBlobBase64 = reader.result;
+          previewEl.src = URL.createObjectURL(localVideoFileObject);
+          navigateTo('videoPage');
+          statusDiv.innerText = "";
+        };
+        reader.readAsDataURL(localVideoFileObject);
+      };
+
+      videoElementChecker.onerror = function() {
+        alert("Could not read video profile data. Please try again.");
+        navigateTo('welcomePage');
+      };
+    }
+
+    function uploadVideoPost() {
+      const name = document.getElementById('globalName').value;
+      const wishes = document.getElementById('videoWishes').value;
+      
+      if (!videoBlobBase64) { alert("Please record a video first."); return; }
+      
+      const shield = document.getElementById('uploadShieldModal');
+      const shieldText = document.getElementById('shieldStatusHeader');
+      
+      // 🔒 FORCE SYSTEM OVERRIDE OPEN
+      if (shield) {
+        if (shieldText) shieldText.innerText = "Uploading your video... 🎥";
+        shield.style.setProperty('display', 'flex', 'important');
+      }
+
+      google.script.run.withSuccessHandler(res => {
+        if(res.success) {
+          if (shieldText) shieldText.innerText = "Video shared successfully! 🎉";
+          setTimeout(() => { 
+            if (shield) shield.style.setProperty('display', 'none', 'important');
+            triggerDirectVideoCamera();
+            navigateTo('albumPage');
+            loadAlbum();
+          }, 1500);
+        } else { 
+          alert("Error: " + res.error); 
+          if (shield) shield.style.setProperty('display', 'none', 'important');
+        }
+      }).uploadData({ type: "Video Note", name: name, wishes: wishes, video: videoBlobBase64 });
+    }
+
+    function uploadTextPost() {
+      const name = document.getElementById('globalName').value;
+      const note = document.getElementById('writtenNote').value.trim();
+
+      if (!note) { alert("Please type something before submitting."); return; }
+      
+      const shield = document.getElementById('uploadShieldModal');
+      const shieldText = document.getElementById('shieldStatusHeader');
+      
+      // 🔒 FORCE SYSTEM OVERRIDE OPEN
+      if (shield) {
+        if (shieldText) shieldText.innerText = "Saving your note... ✍️";
+        shield.style.setProperty('display', 'flex', 'important');
+      }
+
+      google.script.run.withSuccessHandler(res => {
+        if(res.success) {
+          if (shieldText) shieldText.innerText = "Note submitted! 🎉";
+          setTimeout(() => { 
+            if (shield) shield.style.setProperty('display', 'none', 'important');
+            document.getElementById('writtenNote').value = '';
+            navigateTo('albumPage');
+            loadAlbum();
+          }, 1500);
+        } else { 
+          alert("Error: " + res.error); 
+          if (shield) shield.style.setProperty('display', 'none', 'important');
+        }
+      }).uploadData({ type: "Text Note", name: name, note: note });
+    }
+
+    function openPreSubmissionPreview(type) {
+      const mediaWindow = document.getElementById('modalMediaWindow');
+      const nameTarget = document.getElementById('modalNameTarget');
+      const wishesTarget = document.getElementById('modalWishesTarget');
+      const dlBtn = document.getElementById('modalDownloadBtn');
+      if (dlBtn) dlBtn.style.display = 'none';
+
+      nameTarget.innerText = document.getElementById('globalName').value || "Your Name";
+      mediaWindow.innerHTML = '';
+      mediaWindow.style.display = 'flex';
+
+      const prevBtn = document.getElementById('modalPrevBtn');
+      const nextBtn = document.getElementById('modalNextBtn');
+      if (prevBtn) prevBtn.style.display = 'none';
+      if (nextBtn) nextBtn.style.display = 'none';
+      
+      currentModalIndex = null;
+
+      if (type === 'Photo') {
+        if (!compressedImageBase64) return;
+        const txt = document.getElementById('photoWishes').value.trim();
+        wishesTarget.innerText = txt ? `"${txt}"` : "[No caption added yet.]";
+        
+        mediaWindow.innerHTML = `
+          <img class="modal-media-blur-bg" src="${compressedImageBase64}">
+          <img class="fg-media" src="${compressedImageBase64}">`;
+      } else if (type === 'Video Note') {
+        if (!localVideoFileObject) return;
+        const txt = document.getElementById('videoWishes').value.trim();
+        wishesTarget.innerText = txt ? `"${txt}"` : "[No caption added yet.]";
+        
+        let localVidUrl = URL.createObjectURL(localVideoFileObject);
+        
+        mediaWindow.innerHTML = `
+          <video id="modalExpandedVideo" class="modal-media-blur-bg" src="${localVidUrl}" muted></video>
+          <video id="modalExpandedVideoFG" class="fg-media" src="${localVidUrl}" controls autoplay playsinline></video>`;
+          
+        setTimeout(() => {
+          const fgVid = document.getElementById('modalExpandedVideoFG');
+          if (fgVid) {
+            fgVid.ontimeupdate = function() {
+              if (fgVid.currentTime >= 30) {
+                fgVid.currentTime = 0;
+              }
+            };
+          }
+        }, 150);
+      }
+
+      document.getElementById('cardModal').classList.remove('hidden');
+    }
+
+    function loadAlbum() {
+      const grid = document.getElementById('albumGrid');
+      grid.innerHTML = "<p style='grid-column: span 3; text-align:center; padding: 40px; color:#1a202c;'>Gathering wedding entries...</p>";
+      
+      google.script.run.withSuccessHandler(function(albumItems) {
+        grid.innerHTML = "";
+        if (albumItems.length === 0) {
+          grid.innerHTML = "<p style='grid-column: span 3; text-align:center; padding: 40px; color:#1a202c;'>No entries yet!</p>";
+          return;
+        }
+        
+        loadedItemsCache = albumItems.reverse();
+        
+        loadedItemsCache.forEach((item, index) => {
+          const card = document.createElement('div');
+          card.className = 'album-card';
+          card.setAttribute('onclick', `openModal(${index})`);
+          
+          let textContent = item.content ? escapeHtml(item.content) : '';
+          let fileId = item.fileUrl ? item.fileUrl.match(/[-\w]{25,}/) : null;
+          if (fileId) fileId = fileId[0];
+          
+          if (item.type === "Photo" && fileId) {
+            let uniqueImgId = "img_" + fileId;
+            card.innerHTML = `
+              <div class="expand-btn">⤢</div>
+              <div class="media-window" style="width:100%; height:100%; position:relative; overflow:hidden;">
+                <div id="container_${uniqueImgId}" style="width:100%; height:100%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; position:absolute; top:0; left:0; z-index:1;">
+                  <p id="loader_${uniqueImgId}" style="color:#4a5568; margin:0; font-size:9px; font-weight:700;">🔄 Syncing...</p>
+                </div>
+                <img id="${uniqueImgId}" style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; z-index:2;">
+              </div>
+              <div class="card-info">
+                <h4>${escapeHtml(item.name)}</h4>
+                <p>"${textContent || 'Shared a photo 📸'}"</p>
+              </div>`;
+
+            setTimeout(() => {
+              google.script.run.withSuccessHandler(function(result) {
+                let imgEl = document.getElementById(uniqueImgId);
+                let loaderContainerEl = document.getElementById("container_" + uniqueImgId);
+                
+                if (result.success && imgEl) {
+                  imgEl.src = result.dataUrl;
+                  imgEl.draggable = false;
+                  
+                  if (loaderContainerEl) {
+                    loaderContainerEl.style.display = "none";
+                  }
+                  
+                  imgEl.style.display = "block";
+                  loadedItemsCache[index].cachedBlobUrl = result.dataUrl;
+                }
+              }).getMediaBlob(fileId);
+            }, 50 + (index * 20));
+          } 
+          else if (item.type === "Video Note" && fileId) {
+            let uniqueVidId = "vid_" + fileId;
+            card.innerHTML = `
+              <div class="expand-btn">⤢</div>
+              <div class="media-window">
+                <div id="container_${uniqueVidId}" style="width:100%; height:100%; background:#000; display:flex; align-items:center; justify-content:center;">
+                  <p id="loader_${uniqueVidId}" style="color:#ffffff; margin:0; font-size:9px; font-weight:700;">🔄 Syncing...</p>
+                  <!-- CRITICAL FOR iOS: Added autoplay, muted, playsinline attributes directly -->
+                  <video id="${uniqueVidId}" autoplay muted playsinline preload="auto" style="width:100%; height:100%; object-fit:cover; display:none; pointer-events:none;"></video>
+                </div>
+              </div>
+              <div class="card-info">
+                <h4>${escapeHtml(item.name)}</h4>
+                <p>"${textContent || 'Shared a video 🎥'}"</p>
+              </div>`;
+            
+            setTimeout(() => {
+              google.script.run.withSuccessHandler(function(result) {
+                let videoEl = document.getElementById(uniqueVidId);
+                let loaderEl = document.getElementById("loader_" + uniqueVidId);
+                if (result.success && videoEl) {
+                  let realBlobUrl = base64ToBlobUrl(result.dataUrl);
+                  loadedItemsCache[index].cachedBlobUrl = realBlobUrl;
+
+                  if(loaderEl) loaderEl.style.display = "none";
+                  videoEl.style.display = "block";
+                  
+                  // CRITICAL FOR iOS: Force-wake the video pipeline to render the visual frame
+                  videoEl.addEventListener('loadedmetadata', function() {
+                    videoEl.currentTime = 0.3;
+                    
+                    // A quick play -> pause cycle tricks iOS Safari into decoding the poster thumbnail frame
+                    let playPromise = videoEl.play();
+                    if (playPromise !== undefined) {
+                      playPromise.then(() => {
+                        videoEl.pause();
+                      }).catch(e => {
+                        // Safe catch if browser strict-blocks auto-warming
+                        console.log("iOS thumbnail warmed up via fallback channel");
+                      });
+                    }
+                  }, { once: true });
+                  
+                  videoEl.src = realBlobUrl;
+                }
+              }).getMediaBlob(fileId);
+            }, 50 + (index * 20));
+          } 
+          else {
+            card.classList.add('text-only-card');
+            card.innerHTML = `
+              <div class="expand-btn">⤢</div>
+              <div class="card-info">
+                <h4>${escapeHtml(item.name)}</h4>
+                <p>"${textContent || 'Shared a note ✍️'}"</p>
+              </div>`;
+          }
+          
+          grid.appendChild(card);
+        });
+      }).getAlbumData();
+    }
+
+    function openModal(index) {
+      const item = loadedItemsCache[index];
+      if (!item) return;
+      currentModalIndex = index;
+      const mediaWindow = document.getElementById('modalMediaWindow');
+      const nameTarget = document.getElementById('modalNameTarget');
+      const wishesTarget = document.getElementById('modalWishesTarget');
+
+      const dlBtn = document.getElementById('modalDownloadBtn');
+      if (dlBtn) {
+        dlBtn.style.display = 'block'; 
+        dlBtn.innerText = "📥 Download"; 
+        dlBtn.disabled = false; 
+        dlBtn.style.zIndex = "1050"; 
+      } 
+      
+      nameTarget.innerText = item.name;
+      
+      const cleanText = item.content ? escapeHtml(item.content).replace(/\n/g, '<br>') : 'Congratulations on Your Wedding 🎉';
+      wishesTarget.innerHTML = `"${cleanText}"`;
+      
+      mediaWindow.innerHTML = ''; 
+      mediaWindow.style.display = 'flex';
+
+      if (item.type === "Photo") {
+        let imgSrc = item.cachedBlobUrl || item.fileUrl;
+        mediaWindow.innerHTML = `
+          <img class="modal-media-blur-bg" src="${imgSrc}">
+          <img class="fg-media" src="${imgSrc}">`;
+      } 
+      else if (item.type === "Video Note") {
+        if (item.cachedBlobUrl) {
+          mediaWindow.innerHTML = `
+            <video class="modal-media-blur-bg" src="${item.cachedBlobUrl}" muted playsinline loop></video>
+            <video id="modalActualVideo" class="fg-media" src="${item.cachedBlobUrl}" controls playsinline></video>`;
+          
+          // Slight 50ms pause allows Chrome/Android engine to initialize the canvas node safely inside user thread
+          const vid = document.getElementById('modalActualVideo');
+          if (vid) {
+            setTimeout(() => {
+              vid.play().catch(e => console.log("Media playback interaction layer bypass"));
+            }, 50);
+          }
+        } else {
+          let fileId = item.fileUrl.match(/[-\w]{25,}/)[0];
+          mediaWindow.innerHTML = `<p style="color:#fff; font-size:14px; font-weight:700;">🔄 Streaming clip...</p>`;
+          google.script.run.withSuccessHandler(function(result) {
+            if (result.success) {
+              let realBlobUrl = base64ToBlobUrl(result.dataUrl);
+              loadedItemsCache[index].cachedBlobUrl = realBlobUrl;
+              
+              mediaWindow.innerHTML = `
+                <video class="modal-media-blur-bg" src="${realBlobUrl}" muted playsinline loop></video>
+                <video id="modalActualVideo" class="fg-media" src="${realBlobUrl}" controls playsinline></video>`;
+              
+              const vid = document.getElementById('modalActualVideo');
+              if (vid) {
+                setTimeout(() => {
+                  vid.play().catch(e => console.log("Media playback interaction layer bypass"));
+                }, 50);
+              }
+            }
+          }).getMediaBlob(fileId);
+        }
+      } 
+      else {
+        mediaWindow.style.display = 'none'; 
+      }
+
+      document.getElementById('cardModal').classList.remove('hidden');
+
+      const prevBtn = document.getElementById('modalPrevBtn');
+      const nextBtn = document.getElementById('modalNextBtn');
+      
+      if (prevBtn && nextBtn) {
+        prevBtn.style.display = 'flex';
+        nextBtn.style.display = 'flex';
+        prevBtn.disabled = (index === 0);
+        nextBtn.disabled = (index === loadedItemsCache.length - 1);
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('modalMediaWindow').innerHTML = ''; 
+      document.getElementById('cardModal').classList.add('hidden');
+      currentModalIndex = null; 
+    }
+
+    function escapeHtml(text) {
+      return text ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
+    }
+
+    function navigateModalDeck(direction, event) {
+      if (event) event.stopPropagation(); 
+      if (currentModalIndex === null) return;
+      
+      let targetIndex = currentModalIndex + direction;
+      if (targetIndex >= 0 && targetIndex < loadedItemsCache.length) {
+        openModal(targetIndex);
+      }
+    }
+
+function triggerGuestDownload(event) {
+      if (event) event.stopPropagation(); 
+      if (currentModalIndex === null) return;
+
+      const item = loadedItemsCache[currentModalIndex];
+      if (!item) return;
+
+      const dlBtn = document.getElementById('modalDownloadBtn');
+      const originalText = dlBtn.innerText;
+      dlBtn.disabled = true;
+
+      const guestName = item.name || "Anonymous Guest";
+      const guestWishes = item.content ? `"${item.content}"` : `"Congratulations on Your Wedding 🎉"`;
+
+      // =================================================================
+      // MODE A: DYNAMIC REAL-TIME VIDEO GENERATION (FOR VIDEOS)
+      // =================================================================
+      if (item.type === "Video Note") {
+        dlBtn.innerText = "⏳ Preparing Video...";
+        
+        const videoEl = document.getElementById('modalActualVideo');
+        if (!videoEl || videoEl.readyState < 2) {
+          alert("Video element is still buffering. Please wait a moment and try again.");
+          dlBtn.innerText = originalText;
+          dlBtn.disabled = false;
+          return;
+        }
+
+        try {
+          const canvas = document.createElement('canvas');
+          const width = videoEl.videoWidth || 640;
+          const height = videoEl.videoHeight || 480;
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+
+          const canvasStream = canvas.captureStream(30);
+          const finalStream = new MediaStream();
+          finalStream.addTrack(canvasStream.getVideoTracks()[0]);
+
+          try {
+            const nativeStream = videoEl.captureStream ? videoEl.captureStream() : videoEl.mozCaptureStream();
+            if (nativeStream && nativeStream.getAudioTracks().length > 0) {
+              finalStream.addTrack(nativeStream.getAudioTracks()[0]);
+            }
+          } catch (audioErr) {
+            console.warn("Audio Context sandbox restriction encountered:", audioErr);
+          }
+
+          videoEl.currentTime = 0;
+
+          // Target H.264/AVC inside MP4 wrapper if supported by hardware browser profiles, else adapt securely
+          let options = { mimeType: 'video/mp4;codecs=avc1,mp4a.40.2' };
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm;codecs=vp9,opus' };
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm' };
+
+          const recorder = new MediaRecorder(finalStream, options);
+          const chunks = [];
+          recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+
+          recorder.onstop = () => {
+            // CRITICAL UPGRADE: Packages the buffer safely as an MP4 element container for seamless camera-roll handling
+            const videoBlob = new Blob(chunks, { type: 'video/mp4' });
+            const downloadUrl = URL.createObjectURL(videoBlob);
+            
+            const trigger = document.createElement('a');
+            trigger.href = downloadUrl;
+            // Explicitly saves the tracking extension structure down as .mp4
+            trigger.download = `WeddingKeepsake_${guestName.replace(/[^a-z0-9]/gi, '_')}.mp4`;
+            document.body.appendChild(trigger);
+            trigger.click();
+            
+            document.body.removeChild(trigger);
+            URL.revokeObjectURL(downloadUrl);
+            
+            dlBtn.innerText = "✅ Saved!";
+            setTimeout(() => { dlBtn.innerText = originalText; dlBtn.disabled = false; }, 1200);
+          };
+
+          recorder.start();
+          videoEl.play().catch(e => console.log("Playback restart bypass tracker logic"));
+
+          function processVideoFrame() {
+            if (videoEl.paused || videoEl.ended) {
+              if (recorder.state === "recording") recorder.stop();
+              return;
+            }
+
+            ctx.drawImage(videoEl, 0, 0, width, height);
+
+            const trayHeight = height * 0.24; 
+            ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+            ctx.fillRect(0, height - trayHeight, width, trayHeight);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = `bold ${Math.max(16, Math.floor(height * 0.045))}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            ctx.textAlign = "center";
+            ctx.fillText(guestName, width / 2, height - trayHeight + Math.floor(height * 0.05));
+
+            ctx.fillStyle = "#e2e8f0";
+            ctx.font = `italic ${Math.max(12, Math.floor(height * 0.033))}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            
+            const txtWords = guestWishes.split(' ');
+            let currentLine = '';
+            const linesArr = [];
+            const textBoundaryWidth = width * 0.88;
+            const textLineGap = Math.floor(height * 0.042);
+
+            for (let i = 0; i < txtWords.length; i++) {
+              let checkLine = currentLine + txtWords[i] + ' ';
+              if (ctx.measureText(checkLine).width > textBoundaryWidth && i > 0) {
+                linesArr.push(currentLine);
+                currentLine = txtWords[i] + ' ';
+              } else {
+                currentLine = checkLine;
+              }
+            }
+            linesArr.push(currentLine);
+
+            let printedLinesCount = Math.min(linesArr.length, 2);
+            for (let j = 0; j < printedLinesCount; j++) {
+              ctx.fillText(linesArr[j], width / 2, height - trayHeight + Math.floor(height * 0.11) + (j * textLineGap));
+            }
+
+            ctx.fillStyle = "rgba(255, 255, 255, 0.45)"; 
+            ctx.font = `bold ${Math.max(10, Math.floor(height * 0.026))}px -apple-system, sans-serif`;
+            let hashtagVideoY = height - trayHeight + Math.floor(height * 0.12) + (printedLinesCount * textLineGap);
+            ctx.fillText("#MALamarFIRA", width / 2, Math.min(hashtagVideoY, height - Math.floor(height * 0.025)));
+
+            const progress = Math.floor((videoEl.currentTime / videoEl.duration) * 100) || 0;
+            dlBtn.innerText = `⏳ Processing... ${progress}%`;
+
+            requestAnimationFrame(processVideoFrame);
+          }
+
+          requestAnimationFrame(processVideoFrame);
+          videoEl.onended = () => { if (recorder.state === "recording") recorder.stop(); };
+
+        } catch (err) {
+          console.error("Video rendering fallback intercept executed:", err);
+          fallbackToStaticImageCard();
+        }
+      } 
+      // =================================================================
+      // MODE B: POLAROID STYLE PRINT CARD GENERATION (FOR PHOTOS/TEXT)
+      // =================================================================
+      else {
+        fallbackToStaticImageCard();
+      }
+
+      function fallbackToStaticImageCard() {
+        dlBtn.innerText = "⏳ Generating Card...";
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const cardWidth = 800;
+        const cardHeight = 1100;
+        canvas.width = cardWidth;
+        canvas.height = cardHeight;
+
+        // Draw white Polaroid background base
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, cardWidth, cardHeight);
+        
+        // Draw light grey thin card border outer rim
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 8;
+        ctx.strokeRect(20, 20, cardWidth - 40, cardHeight - 40);
+
+        function finalizeAndDownloadCard(isTextOnly = false) {
+          let nameY = isTextOnly ? 350 : 760;
+          let wishesY = isTextOnly ? 440 : 830;
+
+          ctx.fillStyle = "#000000";
+          ctx.font = "900 42px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+          ctx.textBaseline = "top";
+          ctx.textAlign = "center";
+          ctx.fillText(guestName, cardWidth / 2, nameY);
+
+          ctx.fillStyle = "#2d3748";
+          ctx.font = "italic 500 28px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+          wrapCanvasText(ctx, guestWishes, cardWidth / 2, wishesY, cardWidth - 140, 42);
+
+          const cardWords = guestWishes.split(' ');
+          let currentCardLine = '';
+          let cardLinesCount = 1;
+          ctx.font = "italic 500 28px -apple-system, sans-serif"; 
+          for (let i = 0; i < cardWords.length; i++) {
+            let checkLine = currentCardLine + cardWords[i] + ' ';
+            if (ctx.measureText(checkLine).width > (cardWidth - 140) && i > 0) {
+              cardLinesCount++;
+              currentCardLine = cardWords[i] + ' ';
+            } else {
+              currentCardLine = checkLine;
+            }
+          }
+          
+          ctx.fillStyle = "#a0aec0"; 
+          ctx.font = "bold 20px -apple-system, BlinkMacSystemFont, sans-serif";
+          let hashtagCardY = wishesY + (cardLinesCount * 42) + 40; 
+          if (hashtagCardY > 1045) hashtagCardY = 1045;       
+          ctx.fillText("#MALamarFIRA", cardWidth / 2, hashtagCardY);
+
+          try {
+            const cardDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            const safeFileName = `WeddingKeepsake_${guestName.replace(/[^a-z0-9]/gi, '_')}.jpg`;
+            
+            const link = document.createElement('a');
+            link.href = cardDataUrl;
+            link.download = safeFileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            dlBtn.innerText = "✅ Saved!";
+          } catch (err) {
+            alert("Could not extract secure media blob data to generate card image wrapper.");
+            dlBtn.innerText = "❌ Error";
+          }
+
+          setTimeout(() => { dlBtn.innerText = originalText; dlBtn.disabled = false; }, 1200);
+        }
+
+        // PHOTO HANDLING LOGIC LAYER
+      // Adjusting Polaroid card generator behavior based on global option state
+        // CLEANED PHOTO HANDLING LOGIC LAYER (No frame overhead)
+        if (item.type === "Photo" && item.cachedBlobUrl) {
+          const img = new Image();
+          img.crossOrigin = "anonymous"; 
+          img.src = item.cachedBlobUrl;
+          img.onload = function() {
+            // Draw guest photo base asset smoothly scaled into the polaroid boundaries
+            drawMediaToCanvas(ctx, img, 50, 50, cardWidth - 100, 660);
+            
+            // Finalize and trigger the JPEG generation instantly
+            finalizeAndDownloadCard(false);
+          };
+          img.onerror = () => fallbackTextOnlyCard();
+        } else {
+          fallbackTextOnlyCard();
+        }
+
+        function fallbackTextOnlyCard() {
+          ctx.fillStyle = "#fcfdfd";
+          ctx.fillRect(40, 40, cardWidth - 80, cardHeight - 80);
+          finalizeAndDownloadCard(true);
+        }
+      }
+    }
+
+    function wrapCanvasText(context, text, x, y, maxWidth, lineHeight) {
+      let currentY = y;
+      let currentLine = '';
+
+      for (let i = 0; i < text.length; i++) {
+        let char = text[i];
+        let testLine = currentLine + char;
+        let metrics = context.measureText(testLine);
+        
+        if (metrics.width > maxWidth) {
+          let lastSpaceIndex = currentLine.lastIndexOf(' ');
+          
+          if (lastSpaceIndex > 0) {
+            let lineToPrint = currentLine.substring(0, lastSpaceIndex);
+            context.fillText(lineToPrint, x, currentY);
+            currentLine = currentLine.substring(lastSpaceIndex + 1) + char;
+          } else {
+            context.fillText(currentLine, x, currentY);
+            currentLine = char;
+          }
+          currentY += lineHeight;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      context.fillText(currentLine, x, currentY);
+    }
+
+    function drawMediaToCanvas(context, mediaEl, x, y, width, height) {
+      context.save();
+      context.beginPath();
+      context.rect(x, y, width, height);
+      context.clip();
+
+      const mediaWidth = mediaEl.videoWidth || mediaEl.naturalWidth || mediaEl.width;
+      const mediaHeight = mediaEl.videoHeight || mediaEl.naturalHeight || mediaEl.height;
+      
+      const aspectImg = mediaWidth / mediaHeight;
+      const aspectBox = width / height;
+      
+      let renderWidth, renderHeight, renderX, renderY;
+
+      if (aspectImg > aspectBox) {
+        renderHeight = height;
+        renderWidth = mediaWidth * (height / mediaHeight);
+        renderX = x + (width - renderWidth) / 2;
+        renderY = y;
+      } else {
+        renderWidth = width;
+        renderHeight = mediaHeight * (width / mediaWidth);
+        renderX = x;
+        renderY = y + (height - renderHeight) / 2;
+      }
+
+      context.drawImage(mediaEl, renderX, renderY, renderWidth, renderHeight);
+      context.restore();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const targetSelectors = ['#modalMediaWindow', '#albumGrid', '.preview-frame-holder', '.glass-container'];
+      
+      targetSelectors.forEach(selector => {
+        const element = document.querySelector(selector);
+        if (element) {
+          element.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); 
+            return false;
+          });
+        }
+      });
+    });
+  </script>
+
+
+  <div id="uploadShieldModal" style="
+    display: none !important; 
+    position: fixed !important; 
+    top: 0 !important; 
+    left: 0 !important; 
+    width: 100vw !important; 
+    height: 100vh !important; 
+    background: rgba(255, 255, 255, 0.6) !important; 
+    backdrop-filter: blur(12px) !important; 
+    -webkit-backdrop-filter: blur(12px) !important; 
+    z-index: 999999 !important; 
+    align-items: center !important; 
+    justify-content: center !important; 
+    flex-direction: column !important;
+  ">
+  <div style="
+    background: #ffffff !important; 
+    padding: 35px 45px !important; 
+    border-radius: 24px !important; 
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important; 
+    text-align: center !important;
+    max-width: 85% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  ">
+    <div class="shield-loader-ring" style="margin-bottom: 20px !important;"></div>
+    
+    <h3 id="shieldStatusHeader" style="margin: 0 !important; color: #1a202c !important; font-family: -apple-system, sans-serif !important; font-size: 19px !important; font-weight: 700 !important; line-height: 1.4 !important;">Uploading your memory...</h3>
+    <p style="margin: 8px 0 0 0 !important; color: #4a5568 !important; font-family: -apple-system, sans-serif !important; font-size: 13px !important;">Please keep this page open.</p>
+  </div>
+</div>
+</body>
+</html>
