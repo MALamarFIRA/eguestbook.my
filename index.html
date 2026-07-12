@@ -734,7 +734,7 @@
         Welcome to Our Wedding
       </p>
   
-      <div style="font-family: 'Great Vibes', cursive !important, serif; font-size: 24px; font-style: italic; font-weight: 500; color: #1a202c; margin-bottom: 12px; display: inline-block; padding-bottom: 4px; border-bottom: 1px dashed var(--border-color);">
+      <div style="font-family: 'Great Vibes', cursive !important; font-size: 28px; font-style: italic; font-weight: 500; color: #1a202c; margin-bottom: 12px; display: inline-block; padding-bottom: 4px; border-bottom: 1px dashed var(--border-color);">
         Akmal & Musfirah
       </div>
   
@@ -1008,25 +1008,85 @@
     }
 
     function submitInitialGate() {
-      const name = document.getElementById('globalName').value.trim();
-      if (!name) { alert("Please enter your name to enter the guestbook."); return; }
-      document.getElementById('personalizedGreeting').innerText = `Hi, ${name}!`;
-      document.getElementById('initialGate').classList.add('hidden');
+      const nameInput = document.getElementById('globalName');
+      const finalizedName = nameInput ? nameInput.value.trim() : '';
+    
+      // 🛡️ 1. Gatekeeper: Run the character length and sensitive word blocklist filter
+      if (!checkNameSafety(finalizedName)) {
+        if (nameInput) nameInput.focus();
+        return; // 🛑 Stops execution: blocks them from entering if the validation fails
+      }
+    
+      // 📝 2. Apply the greeting using your layout format
+      const greeting = document.getElementById('personalizedGreeting');
+      if (greeting) {
+        greeting.innerText = `Hi, ${finalizedName}!`;
+      }
+    
+      // 🚪 3. Close the gateway wrapper overlay panel
+      const initialGate = document.getElementById('initialGate');
+      if (initialGate) {
+        initialGate.classList.add('hidden');
+      }
     }
-
+    
     function enableNameChange() {
-      document.getElementById('initialGate').classList.remove('hidden');
+      const initialGate = document.getElementById('initialGate');
+      const nameInput = document.getElementById('globalName');
       const gateBtn = document.getElementById('gateSubmitBtn');
+    
+      if (initialGate) {
+        initialGate.classList.remove('hidden');
+      }
+      
       if (gateBtn) {
         gateBtn.innerText = "Update Name ➔";
       }
-      document.getElementById('globalName').focus();
+      
+      if (nameInput) {
+        // Reset any leftover red error styles from previous validation failures
+        nameInput.style.borderColor = "var(--border-color)";
+        
+        // 🚀 MOBILE UX: Focus the input field and automatically highlight the text
+        nameInput.focus();
+        nameInput.select(); 
+      }
     }
 
     function openFeature(featureName) {
-      if (featureName === 'camera') { navigateTo('cameraPage'); resetPhotoWorkflow(); }
-      if (featureName === 'video') { triggerDirectVideoCamera(); }
-      if (featureName === 'note') { navigateTo('notePage'); document.getElementById('writtenNote').value = ''; }
+      const nameInput = document.getElementById('globalName');
+      const finalizedName = nameInput ? nameInput.value.trim() : '';
+    
+      // 🛡️ 1. Gatekeeper validation: Checks for valid length & sensitive words list
+      if (!checkNameSafety(finalizedName)) {
+        if (nameInput) {
+          nameInput.focus();
+          // Optional UI Feedback: Flash the border red to alert the guest
+          nameInput.style.borderColor = "#e53e3e"; 
+          setTimeout(() => nameInput.style.borderColor = "var(--border-color)", 2000);
+        }
+        return; // 🛑 STOPS HERE: Blocks entry if the name fails verification
+      }
+    
+      // 📝 2. Dynamic personalization: Updates the main view header tag
+      const greeting = document.getElementById('personalizedGreeting');
+      if (greeting) {
+        greeting.innerText = finalizedName + "'s Guestbook Link";
+      }
+    
+      // 🧭 3. Router navigation: Runs your original setup flows securely
+      if (featureName === 'camera') { 
+        navigateTo('cameraPage'); 
+        resetPhotoWorkflow(); 
+      }
+      if (featureName === 'video') { 
+        triggerDirectVideoCamera(); 
+      }
+      if (featureName === 'note') { 
+        navigateTo('notePage'); 
+        const writtenNoteEl = document.getElementById('writtenNote');
+        if (writtenNoteEl) writtenNoteEl.value = ''; 
+      }
     }
 
     function resetPhotoWorkflow() {
@@ -2011,6 +2071,7 @@ function triggerGuestDownload(event) {
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      // 🔒 1. YOUR EXISTING CODE: Privacy filter to protect media downloads
       const targetSelectors = ['#modalMediaWindow', '#albumGrid', '.preview-frame-holder', '.glass-container'];
       
       targetSelectors.forEach(selector => {
@@ -2022,7 +2083,66 @@ function triggerGuestDownload(event) {
           });
         }
       });
+    
+      // 🧹 2. NEW CODE: Real-time name character cleaning filter
+      const nameInput = document.getElementById('globalName');
+      if (nameInput) {
+        nameInput.addEventListener('input', function() {
+          const cursorStart = this.selectionStart;
+          const lengthBefore = this.value.length;
+          
+          // Physically block numbers, symbols, and emojis instantly while typing
+          this.value = cleanNameInput(this.value);
+          
+          // Prevents the keyboard cursor from jumping to the end of the text line
+          const lengthAfter = this.value.length;
+          this.setSelectionRange(
+            cursorStart - (lengthBefore - lengthAfter),
+            cursorStart - (lengthBefore - lengthAfter)
+          );
+        });
+      }
     });
+
+
+    // 🛑 1. Setup your sensitive words list here (all lowercase)
+    const SENSITIVE_WORDS = ["fuck", "pakyou", "kote", "die", "shit", "sial", "kimak", "babi", "bodo", "bodoh", "pepek", "pussy", "dick", "tetek", "bontot", "ass", "asshole", "suicide", "ex", "-ex"]; 
+    
+    // 🧹 2. Real-time cleaning function (Keeps ONLY alphabets and standard spaces)
+    function cleanNameInput(rawName) {
+      // Remove numbers, emojis, and all symbols except standard characters
+      let filtered = rawName.replace(/[^a-zA-Z\s]/g, '');
+      
+      // Prevent double spaces (e.g., "John  Doe" becomes "John Doe")
+      filtered = filtered.replace(/\s+/g, ' ');
+      
+      // Limit the max length so it fits elegantly on the screen
+      if (filtered.length > 30) {
+        filtered = filtered.substring(0, 30);
+      }
+      
+      return filtered;
+    }
+    
+    // 🛡️ 3. Safety check before opening any workflow feature
+    function checkNameSafety(finalizedName) {
+      const lowercaseName = finalizedName.toLowerCase().trim();
+      
+      // Rule A: Make sure it's not empty or just 1 letter
+      if (!lowercaseName || lowercaseName.length < 2) {
+        alert("Please enter your name before sharing a memory! 💕");
+        return false;
+      }
+      
+      // Rule B: Match against your sensitive word array
+      const containsSensitiveWord = SENSITIVE_WORDS.some(word => lowercaseName.includes(word));
+      if (containsSensitiveWord) {
+        alert("Please use your real guest name to leave a blessing. Thank you!");
+        return false;
+      }
+      
+      return true;
+    }
   </script>
 
 
