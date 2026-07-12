@@ -2078,27 +2078,31 @@ function triggerGuestDownload(event) {
 
     document.addEventListener('DOMContentLoaded', () => {
       
-      // ⏳ 1. DEADLINE BLOCK: Check if the wedding event deadline has passed
+      // ⏳ 1. DEADLINE BLOCK: Safely hide input features without breaking your navigation buttons
       if (typeof isPastDeadline === "function" && isPastDeadline()) {
-        // Locate the wrapper container holding your action buttons
+        // A. Locate your action container wrapper
         const actionContainer = document.querySelector('.action-container');
         
         if (actionContainer) {
-          // Gracefully clear entry buttons and replace with an elegant lock message
-          actionContainer.innerHTML = `
-            <div style="text-align: center; padding: 20px; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 16px; margin-bottom: 16px; color: #991b1b; font-weight: 600; font-size: 14px; line-height: 1.4;">
-              🔒 Submissions for Akmal & Musfirah's guestbook are now closed. Thank you for celebrating with us!
-            </div>
-            <button class="text-link" onclick="navigateTo('albumPage'); loadAlbum();" style="width: 100%; display: flex; align-items: center; justify-content: center; padding: 18px 24px; background: var(--primary); border: none; border-radius: 16px; font-size: 15px; font-weight: 700; color: #ffffff; box-shadow: 0 4px 14px rgba(0,0,0,0.15); transition: all 0.2s ease; cursor: pointer;">
-              View Shared Guestbook Album ➔
-            </button>
-          `;
+          // Create a clean closed status warning box element
+          const lockBanner = document.createElement('div');
+          lockBanner.style.cssText = "text-align: center; padding: 18px; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 16px; margin-bottom: 16px; color: #991b1b; font-weight: 600; font-size: 14px; line-height: 1.4;";
+          lockBanner.innerHTML = "🔒 Submissions for Akmal & Musfirah's guestbook are now closed. Thank you for celebrating with us!";
+          
+          // Place the alert box right at the top of the button panel
+          actionContainer.insertBefore(lockBanner, actionContainer.firstChild);
         }
+    
+        // B. Target ONLY the camera, video, and note triggers to hide them safely
+        // This looks for any button that runs openFeature() and adds your '.hidden' layout class to it
+        const entryButtons = document.querySelectorAll(".action-container button[onclick^='openFeature']");
+        entryButtons.forEach(btn => {
+          btn.classList.add('hidden');
+        });
       }
     
-      // 🔒 2. PRIVACY FILTER: Protects your media windows from context menus (long-press/right-click copy)
+      // 🔒 2. PRIVACY FILTER: Protects your media windows from context menus
       const targetSelectors = ['#modalMediaWindow', '#albumGrid', '.preview-frame-holder', '.glass-container'];
-      
       targetSelectors.forEach(selector => {
         const element = document.querySelector(selector);
         if (element) {
@@ -2109,19 +2113,17 @@ function triggerGuestDownload(event) {
         }
       });
     
-      // 🧹 3. REAL-TIME CLEANER: Cleans invalid characters out of name input as they type
+      // 🧹 3. REAL-TIME CLEANER: Clean characters out of name inputs as they type
       const nameInput = document.getElementById('globalName');
       if (nameInput) {
         nameInput.addEventListener('input', function() {
           const cursorStart = this.selectionStart;
           const lengthBefore = this.value.length;
           
-          // Physically block numbers, symbols, and emojis instantly while typing
           if (typeof cleanNameInput === "function") {
             this.value = cleanNameInput(this.value);
           }
           
-          // Prevents the mobile keyboard cursor from jumping layout alignment spots
           const lengthAfter = this.value.length;
           this.setSelectionRange(
             cursorStart - (lengthBefore - lengthAfter),
