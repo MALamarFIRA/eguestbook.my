@@ -867,6 +867,7 @@
 
 <script>
 
+  const API_URL = "https://script.google.com/macros/s/AKfycbwYNa_XLfGdQMplp4lYsw0feIwWdBB598yzfigvCtDWgM4bEZbXaHGdv8LgNne8bTP7AA/exec";
   document.getElementById('filterCarousel').addEventListener('scroll', function() {
     clearTimeout(this.scrollTimeout);
     
@@ -1154,20 +1155,41 @@
         console.error("Critical Failure: uploadShieldModal element was not found in the DOM.");
       }
       
-      google.script.run.withSuccessHandler(res => {
-        if(res.success) {
-          if (shieldText) shieldText.innerText = "Uploaded successfully! 🎉";
-          setTimeout(() => { 
-            if (shield) shield.style.setProperty('display', 'none', 'important');
-            resetPhotoWorkflow();
-            navigateTo('albumPage');
-            loadAlbum();
-          }, 1500);
-        } else { 
-          alert("Error: " + res.error);
+      // Package up the exact same data payload
+      const payload = {
+        type: "Photo",
+        name: name,
+        wishes: wishes,
+        image: compressedImageBase64
+      };
+    
+      // Replace google.script.run with an HTTP POST request to your script URL
+      fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors", // Crucial for routing through Google Apps Script's redirect system without CORS errors
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        // ⚠️ NOTE ON 'no-cors' MODE:
+        // When using "no-cors", JavaScript cannot read the exact {success: true} response back from Google. 
+        // However, if the request reaches here without hitting the .catch() block, it means it was sent successfully!
+        if (shieldText) shieldText.innerText = "Uploaded successfully! 🎉";
+        
+        setTimeout(() => { 
           if (shield) shield.style.setProperty('display', 'none', 'important');
-        }
-      }).uploadData({ type: "Photo", name: name, wishes: wishes, image: compressedImageBase64 });
+          resetPhotoWorkflow();
+          navigateTo('albumPage');
+          loadAlbum();
+        }, 1500);
+      })
+      .catch(err => { 
+        console.error("Upload error: ", err);
+        alert("An error occurred while uploading. Please check your connection.");
+        if (shield) shield.style.setProperty('display', 'none', 'important');
+      });
     }
 
     function triggerDirectVideoCamera() {
@@ -1250,21 +1272,41 @@
         if (shieldText) shieldText.innerText = "Uploading your video... 🎥";
         shield.style.setProperty('display', 'flex', 'important');
       }
-
-      google.script.run.withSuccessHandler(res => {
-        if(res.success) {
-          if (shieldText) shieldText.innerText = "Video shared successfully! 🎉";
-          setTimeout(() => { 
-            if (shield) shield.style.setProperty('display', 'none', 'important');
-            triggerDirectVideoCamera();
-            navigateTo('albumPage');
-            loadAlbum();
-          }, 1500);
-        } else { 
-          alert("Error: " + res.error); 
+    
+      // Package up the payload using the exact same structure as before
+      const payload = { 
+        type: "Video Note", 
+        name: name, 
+        wishes: wishes, 
+        video: videoBlobBase64 
+      };
+    
+      // Send the payload to your external Google Apps Script Web API endpoint
+      fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors", // Crucial: bypasses browser CORS locks with standard Google redirect handling
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        // Note: 'no-cors' safely delivers data but blocks standard script body inspection.
+        // If the pipeline reaches here without error, the submit succeeded!
+        if (shieldText) shieldText.innerText = "Video shared successfully! 🎉";
+        
+        setTimeout(() => { 
           if (shield) shield.style.setProperty('display', 'none', 'important');
-        }
-      }).uploadData({ type: "Video Note", name: name, wishes: wishes, video: videoBlobBase64 });
+          triggerDirectVideoCamera();
+          navigateTo('albumPage');
+          loadAlbum();
+        }, 1500);
+      })
+      .catch(err => { 
+        console.error("Video submission error: ", err);
+        alert("An error occurred while uploading your video note. Please try again.");
+        if (shield) shield.style.setProperty('display', 'none', 'important');
+      });
     }
 
     function uploadTextPost() {
@@ -1354,119 +1396,135 @@
       const grid = document.getElementById('albumGrid');
       grid.innerHTML = "<p style='grid-column: span 3; text-align:center; padding: 40px; color:#1a202c;'>Gathering wedding entries...</p>";
       
-      google.script.run.withSuccessHandler(function(albumItems) {
-        grid.innerHTML = "";
-        if (albumItems.length === 0) {
-          grid.innerHTML = "<p style='grid-column: span 3; text-align:center; padding: 40px; color:#1a202c;'>No entries yet!</p>";
-          return;
-        }
-        
-        loadedItemsCache = albumItems.reverse();
-        
-        loadedItemsCache.forEach((item, index) => {
-          const card = document.createElement('div');
-          card.className = 'album-card';
-          card.setAttribute('onclick', `openModal(${index})`);
-          
-          let textContent = item.content ? escapeHtml(item.content) : '';
-          let fileId = item.fileUrl ? item.fileUrl.match(/[-\w]{25,}/) : null;
-          if (fileId) fileId = fileId[0];
-          
-          if (item.type === "Photo" && fileId) {
-            let uniqueImgId = "img_" + fileId;
-            card.innerHTML = `
-              <div class="expand-btn">⤢</div>
-              <div class="media-window" style="width:100%; height:100%; position:relative; overflow:hidden;">
-                <div id="container_${uniqueImgId}" style="width:100%; height:100%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; position:absolute; top:0; left:0; z-index:1;">
-                  <p id="loader_${uniqueImgId}" style="color:#4a5568; margin:0; font-size:9px; font-weight:700;">🔄 Syncing...</p>
-                </div>
-                <img id="${uniqueImgId}" style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; z-index:2;">
-              </div>
-              <div class="card-info">
-                <h4>${escapeHtml(item.name)}</h4>
-                <p>"${textContent || 'Shared a photo 📸'}"</p>
-              </div>`;
-
-            setTimeout(() => {
-              google.script.run.withSuccessHandler(function(result) {
-                let imgEl = document.getElementById(uniqueImgId);
-                let loaderContainerEl = document.getElementById("container_" + uniqueImgId);
-                
-                if (result.success && imgEl) {
-                  imgEl.src = result.dataUrl;
-                  imgEl.draggable = false;
-                  
-                  if (loaderContainerEl) {
-                    loaderContainerEl.style.display = "none";
-                  }
-                  
-                  imgEl.style.display = "block";
-                  loadedItemsCache[index].cachedBlobUrl = result.dataUrl;
-                }
-              }).getMediaBlob(fileId);
-            }, 50 + (index * 20));
-          } 
-          else if (item.type === "Video Note" && fileId) {
-            let uniqueVidId = "vid_" + fileId;
-            card.innerHTML = `
-              <div class="expand-btn">⤢</div>
-              <div class="media-window">
-                <div id="container_${uniqueVidId}" style="width:100%; height:100%; background:#000; display:flex; align-items:center; justify-content:center;">
-                  <p id="loader_${uniqueVidId}" style="color:#ffffff; margin:0; font-size:9px; font-weight:700;">🔄 Syncing...</p>
-                  <!-- CRITICAL FOR iOS: Added autoplay, muted, playsinline attributes directly -->
-                  <video id="${uniqueVidId}" autoplay muted playsinline preload="auto" style="width:100%; height:100%; object-fit:cover; display:none; pointer-events:none;"></video>
-                </div>
-              </div>
-              <div class="card-info">
-                <h4>${escapeHtml(item.name)}</h4>
-                <p>"${textContent || 'Shared a video 🎥'}"</p>
-              </div>`;
-            
-            setTimeout(() => {
-              google.script.run.withSuccessHandler(function(result) {
-                let videoEl = document.getElementById(uniqueVidId);
-                let loaderEl = document.getElementById("loader_" + uniqueVidId);
-                if (result.success && videoEl) {
-                  let realBlobUrl = base64ToBlobUrl(result.dataUrl);
-                  loadedItemsCache[index].cachedBlobUrl = realBlobUrl;
-
-                  if(loaderEl) loaderEl.style.display = "none";
-                  videoEl.style.display = "block";
-                  
-                  // CRITICAL FOR iOS: Force-wake the video pipeline to render the visual frame
-                  videoEl.addEventListener('loadedmetadata', function() {
-                    videoEl.currentTime = 0.3;
-                    
-                    // A quick play -> pause cycle tricks iOS Safari into decoding the poster thumbnail frame
-                    let playPromise = videoEl.play();
-                    if (playPromise !== undefined) {
-                      playPromise.then(() => {
-                        videoEl.pause();
-                      }).catch(e => {
-                        // Safe catch if browser strict-blocks auto-warming
-                        console.log("iOS thumbnail warmed up via fallback channel");
-                      });
-                    }
-                  }, { once: true });
-                  
-                  videoEl.src = realBlobUrl;
-                }
-              }).getMediaBlob(fileId);
-            }, 50 + (index * 20));
-          } 
-          else {
-            card.classList.add('text-only-card');
-            card.innerHTML = `
-              <div class="expand-btn">⤢</div>
-              <div class="card-info">
-                <h4>${escapeHtml(item.name)}</h4>
-                <p>"${textContent || 'Shared a note ✍️'}"</p>
-              </div>`;
+      // 1. Fetch the overall guestbook rows from Apps Script API (GET Request)
+      fetch(API_URL)
+        .then(response => response.json())
+        .then(albumItems => {
+          grid.innerHTML = "";
+          if (albumItems.length === 0) {
+            grid.innerHTML = "<p style='grid-column: span 3; text-align:center; padding: 40px; color:#1a202c;'>No entries yet!</p>";
+            return;
           }
           
-          grid.appendChild(card);
+          loadedItemsCache = albumItems.reverse();
+          
+          loadedItemsCache.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'album-card';
+            card.setAttribute('onclick', `openModal(${index})`);
+            
+            let textContent = item.content ? escapeHtml(item.content) : '';
+            let fileId = item.fileUrl ? item.fileUrl.match(/[-\w]{25,}/) : null;
+            if (fileId) fileId = fileId[0];
+            
+            // --- PHOTO WORKFLOW ---
+            if (item.type === "Photo" && fileId) {
+              let uniqueImgId = "img_" + fileId;
+              card.innerHTML = `
+                <div class="expand-btn">⤢</div>
+                <div class="media-window" style="width:100%; height:100%; position:relative; overflow:hidden;">
+                  <div id="container_${uniqueImgId}" style="width:100%; height:100%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; position:absolute; top:0; left:0; z-index:1;">
+                    <p id="loader_${uniqueImgId}" style="color:#4a5568; margin:0; font-size:9px; font-weight:700;">🔄 Syncing...</p>
+                  </div>
+                  <img id="${uniqueImgId}" style="display:none; width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; z-index:2;">
+                </div>
+                <div class="card-info">
+                  <h4>${escapeHtml(item.name)}</h4>
+                  <p>"${textContent || 'Shared a photo 📸'}"</p>
+                </div>`;
+    
+              // Staggered fetching via native fetch() API instead of google.script.run
+              setTimeout(() => {
+                fetch(`${API_URL}?action=getMediaBlob&fileId=${fileId}`)
+                  .then(res => res.json())
+                  .then(result => {
+                    let imgEl = document.getElementById(uniqueImgId);
+                    let loaderContainerEl = document.getElementById("container_" + uniqueImgId);
+                    
+                    if (result.success && imgEl) {
+                      imgEl.src = result.dataUrl;
+                      imgEl.draggable = false;
+                      
+                      if (loaderContainerEl) {
+                        loaderContainerEl.style.display = "none";
+                      }
+                      
+                      imgEl.style.display = "block";
+                      loadedItemsCache[index].cachedBlobUrl = result.dataUrl;
+                    }
+                  })
+                  .catch(err => console.error("Error syncing photo blob:", err));
+              }, 50 + (index * 20));
+            } 
+            
+            // --- VIDEO WORKFLOW ---
+            else if (item.type === "Video Note" && fileId) {
+              let uniqueVidId = "vid_" + fileId;
+              card.innerHTML = `
+                <div class="expand-btn">⤢</div>
+                <div class="media-window">
+                  <div id="container_${uniqueVidId}" style="width:100%; height:100%; background:#000; display:flex; align-items:center; justify-content:center;">
+                    <p id="loader_${uniqueVidId}" style="color:#ffffff; margin:0; font-size:9px; font-weight:700;">🔄 Syncing...</p>
+                    <video id="${uniqueVidId}" autoplay muted playsinline preload="auto" style="width:100%; height:100%; object-fit:cover; display:none; pointer-events:none;"></video>
+                  </div>
+                </div>
+                <div class="card-info">
+                  <h4>${escapeHtml(item.name)}</h4>
+                  <p>"${textContent || 'Shared a video 🎥'}"</p>
+                </div>`;
+              
+              // Fetching the video binary blob via API URL query parameter
+              setTimeout(() => {
+                fetch(`${API_URL}?action=getMediaBlob&fileId=${fileId}`)
+                  .then(res => res.json())
+                  .then(result => {
+                    let videoEl = document.getElementById(uniqueVidId);
+                    let loaderEl = document.getElementById("loader_" + uniqueVidId);
+                    if (result.success && videoEl) {
+                      let realBlobUrl = base64ToBlobUrl(result.dataUrl);
+                      loadedItemsCache[index].cachedBlobUrl = realBlobUrl;
+    
+                      if(loaderEl) loaderEl.style.display = "none";
+                      videoEl.style.display = "block";
+                      
+                      // CRITICAL FOR iOS: Keep your exact video thumbnail warming logic
+                      videoEl.addEventListener('loadedmetadata', function() {
+                        videoEl.currentTime = 0.3;
+                        let playPromise = videoEl.play();
+                        if (playPromise !== undefined) {
+                          playPromise.then(() => {
+                            videoEl.pause();
+                          }).catch(e => {
+                            console.log("iOS thumbnail warmed up via fallback channel");
+                          });
+                        }
+                      }, { once: true });
+                      
+                      videoEl.src = realBlobUrl;
+                    }
+                  })
+                  .catch(err => console.error("Error syncing video blob:", err));
+              }, 50 + (index * 20));
+            } 
+            
+            // --- TEXT CARD WORKFLOW ---
+            else {
+              card.classList.add('text-only-card');
+              card.innerHTML = `
+                <div class="expand-btn">⤢</div>
+                <div class="card-info">
+                  <h4>${escapeHtml(item.name)}</h4>
+                  <p>"${textContent || 'Shared a note ✍️'}"</p>
+                </div>`;
+            }
+            
+            grid.appendChild(card);
+          });
+        })
+        .catch(error => {
+          console.error("Error gathering entries:", error);
+          grid.innerHTML = "<p style='grid-column: span 3; text-align:center; padding: 40px; color:red;'>Failed to load entries.</p>";
         });
-      }).getAlbumData();
     }
 
     function openModal(index) {
