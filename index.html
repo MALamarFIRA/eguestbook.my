@@ -2078,23 +2078,39 @@ function triggerGuestDownload(event) {
 
     document.addEventListener('DOMContentLoaded', () => {
       
-      // ⏳ 1. DEADLINE BLOCK: Safely hide input features without breaking your navigation buttons
+      // ⏳ 1. DEADLINE BLOCK: Safely hide submission buttons and show an elegant lock banner
       if (typeof isPastDeadline === "function" && isPastDeadline()) {
-        // A. Locate your action container wrapper
         const actionContainer = document.querySelector('.action-container');
         
         if (actionContainer) {
-          // Create a clean closed status warning box element
-          const lockBanner = document.createElement('div');
-          lockBanner.style.cssText = "text-align: center; padding: 18px; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 16px; margin-bottom: 16px; color: #991b1b; font-weight: 600; font-size: 14px; line-height: 1.4;";
-          lockBanner.innerHTML = "🔒 Submissions for Akmal & Musfirah's guestbook are now closed. Thank you for celebrating with us!";
-          
-          // Place the alert box right at the top of the button panel
-          actionContainer.insertBefore(lockBanner, actionContainer.firstChild);
+          // First, check if the banner already exists to prevent duplication
+          if (!document.getElementById('deadlineLockBanner')) {
+            const lockBanner = document.createElement('div');
+            lockBanner.id = 'deadlineLockBanner';
+            
+            // 💎 Clean, premium styling matching your minimalist design
+            lockBanner.style.cssText = `
+              text-align: center; 
+              padding: 16px 20px; 
+              background: #fee2e2; 
+              border: 1px solid #fca5a5; 
+              border-radius: 14px; 
+              margin-bottom: 20px; 
+              color: #991b1b; 
+              font-weight: 600; 
+              font-size: 13px; 
+              line-height: 1.5;
+              width: 100%;
+              box-sizing: border-box;
+            `;
+            lockBanner.innerHTML = "🔒 Submissions for Akmal & Musfirah's guestbook are now closed. Thank you for celebrating with us!";
+            
+            // Injects the warning banner right at the top of the action panel area
+            actionContainer.insertBefore(lockBanner, actionContainer.firstChild);
+          }
         }
     
-        // B. Target ONLY the camera, video, and note triggers to hide them safely
-        // This looks for any button that runs openFeature() and adds your '.hidden' layout class to it
+        // Hide ONLY the submission triggers using your CSS utility framework
         const entryButtons = document.querySelectorAll(".action-container button[onclick^='openFeature']");
         entryButtons.forEach(btn => {
           btn.classList.add('hidden');
