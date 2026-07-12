@@ -1078,13 +1078,7 @@
         return; // 🛑 STOPS HERE: Blocks entry if the name fails verification
       }
     
-      // 📝 3. Dynamic personalization: Updates the main view header tag
-      const greeting = document.getElementById('personalizedGreeting');
-      if (greeting) {
-        greeting.innerText = finalizedName + "'s Guestbook Link";
-      }
-    
-      // 🧭 4. Router navigation: Runs your original setup flows securely
+      // 🧭 3. Router navigation: Runs your original setup flows securely
       if (featureName === 'camera') { 
         navigateTo('cameraPage'); 
         resetPhotoWorkflow(); 
