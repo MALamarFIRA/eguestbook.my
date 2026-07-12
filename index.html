@@ -1054,10 +1054,16 @@
     }
 
     function openFeature(featureName) {
+      // 🛑 1. DEADLINE FIREWALL: Instantly block entries if the due date has passed
+      if (typeof isPastDeadline === "function" && isPastDeadline()) {
+        alert("Submissions are now closed for this wedding guestbook. 💕");
+        return; // Stops execution immediately
+      }
+    
       const nameInput = document.getElementById('globalName');
       const finalizedName = nameInput ? nameInput.value.trim() : '';
     
-      // 🛡️ 1. Gatekeeper validation: Checks for valid length & sensitive words list
+      // 🛡️ 2. Gatekeeper validation: Checks for valid length & sensitive words list
       if (!checkNameSafety(finalizedName)) {
         if (nameInput) {
           nameInput.focus();
@@ -1068,13 +1074,13 @@
         return; // 🛑 STOPS HERE: Blocks entry if the name fails verification
       }
     
-      // 📝 2. Dynamic personalization: Updates the main view header tag
+      // 📝 3. Dynamic personalization: Updates the main view header tag
       const greeting = document.getElementById('personalizedGreeting');
       if (greeting) {
         greeting.innerText = finalizedName + "'s Guestbook Link";
       }
     
-      // 🧭 3. Router navigation: Runs your original setup flows securely
+      // 🧭 4. Router navigation: Runs your original setup flows securely
       if (featureName === 'camera') { 
         navigateTo('cameraPage'); 
         resetPhotoWorkflow(); 
@@ -2071,7 +2077,26 @@ function triggerGuestDownload(event) {
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // 🔒 1. YOUR EXISTING CODE: Privacy filter to protect media downloads
+      
+      // ⏳ 1. DEADLINE BLOCK: Check if the wedding event deadline has passed
+      if (typeof isPastDeadline === "function" && isPastDeadline()) {
+        // Locate the wrapper container holding your action buttons
+        const actionContainer = document.querySelector('.action-container');
+        
+        if (actionContainer) {
+          // Gracefully clear entry buttons and replace with an elegant lock message
+          actionContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 16px; margin-bottom: 16px; color: #991b1b; font-weight: 600; font-size: 14px; line-height: 1.4;">
+              🔒 Submissions for Akmal & Musfirah's guestbook are now closed. Thank you for celebrating with us!
+            </div>
+            <button class="text-link" onclick="navigateTo('albumPage'); loadAlbum();" style="width: 100%; display: flex; align-items: center; justify-content: center; padding: 18px 24px; background: var(--primary); border: none; border-radius: 16px; font-size: 15px; font-weight: 700; color: #ffffff; box-shadow: 0 4px 14px rgba(0,0,0,0.15); transition: all 0.2s ease; cursor: pointer;">
+              View Shared Guestbook Album ➔
+            </button>
+          `;
+        }
+      }
+    
+      // 🔒 2. PRIVACY FILTER: Protects your media windows from context menus (long-press/right-click copy)
       const targetSelectors = ['#modalMediaWindow', '#albumGrid', '.preview-frame-holder', '.glass-container'];
       
       targetSelectors.forEach(selector => {
@@ -2084,7 +2109,7 @@ function triggerGuestDownload(event) {
         }
       });
     
-      // 🧹 2. NEW CODE: Real-time name character cleaning filter
+      // 🧹 3. REAL-TIME CLEANER: Cleans invalid characters out of name input as they type
       const nameInput = document.getElementById('globalName');
       if (nameInput) {
         nameInput.addEventListener('input', function() {
@@ -2092,9 +2117,11 @@ function triggerGuestDownload(event) {
           const lengthBefore = this.value.length;
           
           // Physically block numbers, symbols, and emojis instantly while typing
-          this.value = cleanNameInput(this.value);
+          if (typeof cleanNameInput === "function") {
+            this.value = cleanNameInput(this.value);
+          }
           
-          // Prevents the keyboard cursor from jumping to the end of the text line
+          // Prevents the mobile keyboard cursor from jumping layout alignment spots
           const lengthAfter = this.value.length;
           this.setSelectionRange(
             cursorStart - (lengthBefore - lengthAfter),
@@ -2142,6 +2169,16 @@ function triggerGuestDownload(event) {
       }
       
       return true;
+    }
+
+
+    // ⏳ WEDDING EVENT DUE DATE CONFIGURATION (Year, Month Index (0-11), Day, Hour, Minute)
+    // Note: Month index is 0-based. 0 = Jan, 1 = Feb, ..., 6 = July, 11 = Dec.
+    const DUE_DATE = new Date(2025, 6, 25, 23, 59); // Example: July 25, 2026 at 11:59 PM
+    
+    function isPastDeadline() {
+      const now = new Date();
+      return now >= DUE_DATE;
     }
   </script>
 
