@@ -762,6 +762,10 @@
         <span>✍️ Write a Note</span>
         <span style="opacity: 0.5; font-weight: 400;">➔</span>
       </button>
+
+      <div id="deadlineLockBanner" class="hidden" style="text-align: center; padding: 16px 20px; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 14px; margin: 0 auto 20px auto; color: #991b1b; font-weight: 600; font-size: 13px; line-height: 1.5; max-width: 90%; box-sizing: border-box;">
+        🔒 Submissions for Akmal & Musfirah's guestbook are now closed. Thank you for celebrating with us!
+      </div>
       
       <button class="text-link" onclick="navigateTo('albumPage'); loadAlbum();" style="align-self: center; display: flex; align-items: center; justify-content: center; padding: 12px 24px; margin-top: 12px; border: none; border-radius: 100px; font-size: 15px; font-weight: 700; color: #000000; box-shadow: 0 4px 14px rgba(0,0,0,0.15); transition: all 0.2s ease; cursor: pointer;">
         View Guestbook Album ➔
@@ -2078,46 +2082,22 @@ function triggerGuestDownload(event) {
 
     document.addEventListener('DOMContentLoaded', () => {
       
-      // ⏳ 1. DEADLINE BLOCK: Safely hide submission buttons and show an elegant lock banner
+      // ⏳ 1. DEADLINE TRACKER: Toggle visibility profiles based on wedding date status
       if (typeof isPastDeadline === "function" && isPastDeadline()) {
-        const actionContainer = document.querySelector('.action-container');
-        
-        if (actionContainer) {
-          // First, check if the banner already exists to prevent duplication
-          if (!document.getElementById('deadlineLockBanner')) {
-            const lockBanner = document.createElement('div');
-            lockBanner.id = 'deadlineLockBanner';
-            
-            // 💎 Clean, premium styling matching your minimalist design
-            lockBanner.style.cssText = `
-              text-align: center; 
-              padding: 16px 20px; 
-              background: #fee2e2; 
-              border: 1px solid #fca5a5; 
-              border-radius: 14px; 
-              margin-bottom: 20px; 
-              color: #991b1b; 
-              font-weight: 600; 
-              font-size: 13px; 
-              line-height: 1.5;
-              width: 100%;
-              box-sizing: border-box;
-            `;
-            lockBanner.innerHTML = "🔒 Submissions for Akmal & Musfirah's guestbook are now closed. Thank you for celebrating with us!";
-            
-            // Injects the warning banner right at the top of the action panel area
-            actionContainer.insertBefore(lockBanner, actionContainer.firstChild);
-          }
+        // Reveal our predefined native warning message banner cleanly
+        const lockBanner = document.getElementById('deadlineLockBanner');
+        if (lockBanner) {
+          lockBanner.classList.remove('hidden');
         }
     
-        // Hide ONLY the submission triggers using your CSS utility framework
+        // Instantly hide the 3 submission action triggers (Camera, Video, Note)
         const entryButtons = document.querySelectorAll(".action-container button[onclick^='openFeature']");
         entryButtons.forEach(btn => {
           btn.classList.add('hidden');
         });
       }
     
-      // 🔒 2. PRIVACY FILTER: Protects your media windows from context menus
+      // 🔒 2. PRIVACY CONTROLS: Block right-clicks and image downloads
       const targetSelectors = ['#modalMediaWindow', '#albumGrid', '.preview-frame-holder', '.glass-container'];
       targetSelectors.forEach(selector => {
         const element = document.querySelector(selector);
@@ -2129,7 +2109,7 @@ function triggerGuestDownload(event) {
         }
       });
     
-      // 🧹 3. REAL-TIME CLEANER: Clean characters out of name inputs as they type
+      // 🧹 3. TYPING CLEANER: Filter invalid numbers or characters from the input field
       const nameInput = document.getElementById('globalName');
       if (nameInput) {
         nameInput.addEventListener('input', function() {
