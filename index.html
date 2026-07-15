@@ -1267,7 +1267,7 @@
     if (filterType === 'fairytale') imgPreview.style.filter = 'contrast(0.9) brightness(1.1) saturate(1.15) hue-rotate(10deg)';
 
     // Process and re-bake final output asset coordinates dynamically
-    renderFilteredBase64();
+    document.getElementById('imagePreview').src = rawSelectedImageSrc;
   }
 
 
