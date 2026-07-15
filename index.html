@@ -986,6 +986,8 @@
     this.scrollTimeout = setTimeout(() => {
       const carousel = this;
       const buttons = carousel.querySelectorAll('.filter-btn');
+      if (!buttons.length) return; // Safeguard if no buttons exist yet
+  
       const carouselCenter = carousel.getBoundingClientRect().left + (carousel.offsetWidth / 2);
       
       let closestButton = null;
@@ -1001,18 +1003,52 @@
         }
       });
       
+      // Hardened validation checking
       if (closestButton && !closestButton.classList.contains('active')) {
-        buttons.forEach(b => b.classList.remove('active'));
+        buttons.forEach(b => {
+          b.classList.remove('active');
+          b.style.borderColor = '#cbd5e0';
+          b.style.background = '#ffffff';
+        });
+        
         closestButton.classList.add('active');
         
-        const targetFilter = closestButton.getAttribute('data-filter');
-        // Fires the actual canvas background filter swap only when centered
-        if (typeof applyFilterStyle === 'function') {
-          applyFilterStyle(targetFilter, closestButton);
+        // Fallback: If data-filter attribute is missing, try parsing it from the onclick attribute string
+        let targetFilter = closestButton.getAttribute('data-filter');
+        if (!targetFilter) {
+          const onclickAttr = closestButton.getAttribute('onclick') || '';
+          const match = onclickAttr.match(/'([^']+)'/);
+          targetFilter = match ? match[1] : 'none';
         }
+        
+        // Update real-time visual CSS rules to screen preview safely
+        const imgPreview = document.getElementById('imagePreview');
+        const liveVideo = document.querySelector('#cameraPage video');
+        
+        // Update global trackers
+        currentSelectedFilter = targetFilter;
+        activeLiveFilter = targetFilter;
+  
+        // Apply filter to live video stream element if it exists
+        if (liveVideo) {
+          liveVideo.style.filter = FILTER_STYLES[targetFilter] || 'none';
+        }
+  
+        // Apply filter to static uploaded image preview element if it exists
+        if (imgPreview) {
+          if (targetFilter === 'none') imgPreview.style.filter = 'none';
+          else if (targetFilter === 'rosy') imgPreview.style.filter = 'saturate(1.2) hue-rotate(-10deg) brightness(1.05)';
+          else if (targetFilter === 'vintage') imgPreview.style.filter = 'sepia(0.35) contrast(0.95) saturate(0.85)';
+          else if (targetFilter === 'warm') imgPreview.style.filter = 'sepia(0.15) saturate(1.3) brightness(1.02)'; 
+          else if (targetFilter === 'fairytale') imgPreview.style.filter = 'contrast(0.9) brightness(1.1) saturate(1.15) hue-rotate(10deg)';
+        }
+        
+        // Keep your carousel styling synchronizations intact
+        closestButton.style.borderColor = '#4a5568';
+        closestButton.style.background = '#edf2f7';
       }
     }, 40);
-  }); 
+  });
 
     let compressedImageBase64 = null;
     let videoBlobBase64 = null;
