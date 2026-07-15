@@ -798,6 +798,19 @@
           <div class="preview-hint-tag" style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #fff; padding: 4px 8px; border-radius: 12px; font-size: 11px; backdrop-filter: blur(4px);">🔍 Preview</div>
         </div>
         
+        <div style="width: 100%; overflow: hidden;">
+          <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 700; color: #4a5568; text-align: center;">✨ Choose a Filter:</p>
+          <div id="filterCarousel" style="display: flex; gap: 12px; overflow-x: auto; padding: 8px 0; width: 100%; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; box-sizing: border-box;">
+            <div style="flex: 0 0 calc(50% - 45px); pointer-events: none;"></div>
+            <button type="button" class="filter-btn active" data-filter="none" onclick="this.scrollIntoView({ inline: 'center', behavior: 'smooth' })">Original</button>
+            <button type="button" class="filter-btn" data-filter="rosy" onclick="this.scrollIntoView({ inline: 'center', behavior: 'smooth' })">🌸 Rosy</button>
+            <button type="button" class="filter-btn" data-filter="vintage" onclick="this.scrollIntoView({ inline: 'center', behavior: 'smooth' })">📸 Retro</button>
+            <button type="button" class="filter-btn" data-filter="warm" onclick="this.scrollIntoView({ inline: 'center', behavior: 'smooth' })">☀️ Warm</button>
+            <button type="button" class="filter-btn" data-filter="fairytale" onclick="this.scrollIntoView({ inline: 'center', behavior: 'smooth' })">🦄 Dreamy</button>
+            <div style="flex: 0 0 calc(50% - 45px); pointer-events: none;"></div>
+          </div>
+        </div>
+
         <textarea id="photoWishes" placeholder="Write your sweet wishes here... (Optional)" style="margin: 2px 0; width: 100%; min-height: 70px; box-sizing: border-box;"></textarea>
         
         <div class="action-container" style="gap: 8px; width: 100%;">
@@ -910,75 +923,6 @@
 
 <script>
 
-  // 🎨 Global active filter state tracker
-  let activeLiveFilter = 'none';
-  
-  // 🌿 CSS filter maps for each of your premium themes
-  const FILTER_STYLES = {
-    'none': 'none',
-    'rosy': 'saturate(130%) hue-rotate(-10deg) brightness(105%) contrast(95%)',
-    'vintage': 'sepia(45%) contrast(110%) brightness(95%) saturate(85%)',
-    'warm': 'sepia(25%) saturate(140%) hue-rotate(-5deg) brightness(105%)',
-    'fairytale': 'saturate(110%) brightness(115%) contrast(90%) blur(0.3px) opacity(95%)'
-  };
-  
-  function selectCarouselFilter(filterName, buttonElement) {
-    activeLiveFilter = filterName;
-  
-    // 1. Center the clicked button in the carousel smoothly
-    if (buttonElement) {
-      buttonElement.scrollIntoView({ inline: 'center', behavior: 'smooth' });
-      
-      // Toggle the 'active' class styling among buttons
-      const siblings = buttonElement.parentNode.querySelectorAll('.filter-btn');
-      siblings.forEach(btn => btn.classList.remove('active'));
-      buttonElement.classList.add('active');
-    }
-  
-    // 2. Apply style to live stream element instantly
-    const liveVideo = document.querySelector('#cameraPage video');
-    if (liveVideo) {
-      liveVideo.style.filter = FILTER_STYLES[filterName] || 'none';
-    }
-  }
-
-  function captureLivePhoto() {
-    const video = document.querySelector('#cameraPage video');
-    const canvas = document.createElement('canvas'); // Creates a temporary canvas
-    
-    if (!video) {
-      alert("Camera stream not found!");
-      return;
-    }
-  
-    // Match the canvas size to the video dimensions
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    
-    const ctx = canvas.getContext('2d');
-  
-    // 1. 🎨 Apply the active live filter to the canvas context
-    ctx.filter = FILTER_STYLES[activeLiveFilter] || 'none';
-  
-    // 2. Snap the picture
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  
-    // 3. Save it to your global upload variable
-    compressedImageBase64 = canvas.toDataURL('image/jpeg', 0.85);
-  
-    // 4. Show the photo preview workflow page
-    const imgPreview = document.getElementById('imagePreview');
-    if (imgPreview) {
-      imgPreview.src = compressedImageBase64;
-      // Apply visual filter to preview screen
-      imgPreview.style.filter = FILTER_STYLES[activeLiveFilter] || 'none';
-    }
-  
-    // Hide source, open workflow
-    document.getElementById('sourceSelection').style.display = 'none';
-    document.getElementById('photoWorkflow').classList.remove('hidden');
-  }
-
   const API_URL = "https://script.google.com/macros/s/AKfycbwYNa_XLfGdQMplp4lYsw0feIwWdBB598yzfigvCtDWgM4bEZbXaHGdv8LgNne8bTP7AA/exec";
   document.getElementById('filterCarousel').addEventListener('scroll', function() {
     clearTimeout(this.scrollTimeout);
@@ -986,8 +930,6 @@
     this.scrollTimeout = setTimeout(() => {
       const carousel = this;
       const buttons = carousel.querySelectorAll('.filter-btn');
-      if (!buttons.length) return; // Safeguard if no buttons exist yet
-  
       const carouselCenter = carousel.getBoundingClientRect().left + (carousel.offsetWidth / 2);
       
       let closestButton = null;
@@ -1003,52 +945,18 @@
         }
       });
       
-      // Hardened validation checking
       if (closestButton && !closestButton.classList.contains('active')) {
-        buttons.forEach(b => {
-          b.classList.remove('active');
-          b.style.borderColor = '#cbd5e0';
-          b.style.background = '#ffffff';
-        });
-        
+        buttons.forEach(b => b.classList.remove('active'));
         closestButton.classList.add('active');
         
-        // Fallback: If data-filter attribute is missing, try parsing it from the onclick attribute string
-        let targetFilter = closestButton.getAttribute('data-filter');
-        if (!targetFilter) {
-          const onclickAttr = closestButton.getAttribute('onclick') || '';
-          const match = onclickAttr.match(/'([^']+)'/);
-          targetFilter = match ? match[1] : 'none';
+        const targetFilter = closestButton.getAttribute('data-filter');
+        // Fires the actual canvas background filter swap only when centered
+        if (typeof applyFilterStyle === 'function') {
+          applyFilterStyle(targetFilter, closestButton);
         }
-        
-        // Update real-time visual CSS rules to screen preview safely
-        const imgPreview = document.getElementById('imagePreview');
-        const liveVideo = document.querySelector('#cameraPage video');
-        
-        // Update global trackers
-        currentSelectedFilter = targetFilter;
-        activeLiveFilter = targetFilter;
-  
-        // Apply filter to live video stream element if it exists
-        if (liveVideo) {
-          liveVideo.style.filter = FILTER_STYLES[targetFilter] || 'none';
-        }
-  
-        // Apply filter to static uploaded image preview element if it exists
-        if (imgPreview) {
-          if (targetFilter === 'none') imgPreview.style.filter = 'none';
-          else if (targetFilter === 'rosy') imgPreview.style.filter = 'saturate(1.2) hue-rotate(-10deg) brightness(1.05)';
-          else if (targetFilter === 'vintage') imgPreview.style.filter = 'sepia(0.35) contrast(0.95) saturate(0.85)';
-          else if (targetFilter === 'warm') imgPreview.style.filter = 'sepia(0.15) saturate(1.3) brightness(1.02)'; 
-          else if (targetFilter === 'fairytale') imgPreview.style.filter = 'contrast(0.9) brightness(1.1) saturate(1.15) hue-rotate(10deg)';
-        }
-        
-        // Keep your carousel styling synchronizations intact
-        closestButton.style.borderColor = '#4a5568';
-        closestButton.style.background = '#edf2f7';
       }
     }, 40);
-  });
+  }); 
 
     let compressedImageBase64 = null;
     let videoBlobBase64 = null;
@@ -1185,10 +1093,6 @@
       }
     }
 
-    // Keep these global variables right above your reset function!
-    let rawSelectedImageSrc = null;
-    let currentSelectedFilter = 'none';
-    
     function resetPhotoWorkflow() {
       document.getElementById('photoWorkflow').classList.add('hidden');
       document.getElementById('sourceSelection').style.display = 'flex';
@@ -1197,47 +1101,41 @@
       document.getElementById('photoWishes').value = '';
       document.getElementById('cameraStatus').innerText = '';
       
-      // 1. Reset the preview image filter (for uploaded images)
-      if (document.getElementById('imagePreview')) {
-        document.getElementById('imagePreview').style.filter = 'none';
-      }
-    
-      // 2. NEW: Reset the live video stream filter (for the live camera)
-      const liveVideo = document.querySelector('#cameraPage video');
-      if (liveVideo) {
-        liveVideo.style.filter = 'none';
-      }
-      
-      // 3. Reset the filter carousel buttons back to "Original"
-      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-      
-      // Find the "Original" button inside your carousel and activate it
-      const fallbackBtn = document.querySelector("#filterCarousel .filter-btn[data-filter='none']") || 
-                          document.querySelector(".filter-btn[onclick*='none']");
-      if (fallbackBtn) {
-        fallbackBtn.classList.add('active');
-        // Smoothly scroll the carousel back to the start
-        fallbackBtn.scrollIntoView({ inline: 'center', behavior: 'instant' });
-      }
-    
-      // 4. Reset sharing button states
       const subBtn = document.getElementById('photoSubmitBtn');
-      if (subBtn) {
-        subBtn.disabled = false;
-        subBtn.innerText = "🎉 Share to Album";
-      }
+      subBtn.disabled = false;
+      subBtn.innerText = "🎉 Share to Album";
+      document.getElementById('photoChangeBtn').disabled = false;
       
-      const changeBtn = document.getElementById('photoChangeBtn');
-      if (changeBtn) {
-        changeBtn.disabled = false;
-      }
-      
-      // 5. Clear stored memory references
       compressedImageBase64 = null;
-      rawSelectedImageSrc = null;
-      currentSelectedFilter = 'none';
-      activeLiveFilter = 'none'; // Reset live tracker to default
     }
+
+  // New Global Tracker for selected image properties
+  let rawSelectedImageSrc = null;
+  let currentSelectedFilter = 'none';
+
+  function resetPhotoWorkflow() {
+    document.getElementById('photoWorkflow').classList.add('hidden');
+    document.getElementById('sourceSelection').style.display = 'flex';
+    document.getElementById('cameraInput').value = '';
+    document.getElementById('albumInput').value = '';
+    document.getElementById('photoWishes').value = '';
+    document.getElementById('cameraStatus').innerText = '';
+    
+    if (document.getElementById('imagePreview')) document.getElementById('imagePreview').style.filter = 'none';
+    
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    const fallbackBtn = document.querySelector(".filter-btn[onclick*='none']");
+    if(fallbackBtn) fallbackBtn.classList.add('active');
+
+    const subBtn = document.getElementById('photoSubmitBtn');
+    subBtn.disabled = false;
+    subBtn.innerText = "🎉 Share to Album";
+    document.getElementById('photoChangeBtn').disabled = false;
+    
+    compressedImageBase64 = null;
+    rawSelectedImageSrc = null;
+    currentSelectedFilter = 'none';
+  }
 
   function previewImage(inputId) {
     const fileInput = document.getElementById(inputId);
@@ -1269,7 +1167,7 @@
       currentSelectedFilter = 'none';        // Reset vibe tracker
       
       // Pass to compilation engine
-      document.getElementById('imagePreview').src = rawSelectedImageSrc;
+      renderFilteredBase64();
       
       document.getElementById('sourceSelection').style.display = 'none';
       document.getElementById('photoWorkflow').classList.remove('hidden');
@@ -1303,7 +1201,7 @@
     if (filterType === 'fairytale') imgPreview.style.filter = 'contrast(0.9) brightness(1.1) saturate(1.15) hue-rotate(10deg)';
 
     // Process and re-bake final output asset coordinates dynamically
-    document.getElementById('imagePreview').src = rawSelectedImageSrc;
+    renderFilteredBase64();
   }
 
 
@@ -1394,15 +1292,12 @@
         console.error("Critical Failure: uploadShieldModal element was not found in the DOM.");
       }
       
-      // Bypass filters and use the original unmodified photo
-      const finalImage = rawSelectedImageSrc || compressedImageBase64;
-
       // Package up the exact same data payload
       const payload = {
         type: "Photo",
         name: name,
         wishes: wishes,
-        image: finalImage
+        image: compressedImageBase64
       };
     
       // Replace google.script.run with an HTTP POST request to your script URL
