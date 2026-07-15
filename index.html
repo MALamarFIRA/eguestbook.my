@@ -798,21 +798,6 @@
           <div class="preview-hint-tag" style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #fff; padding: 4px 8px; border-radius: 12px; font-size: 11px; backdrop-filter: blur(4px);">🔍 Preview</div>
         </div>
         
-        <div style="width: 100%; overflow: hidden;">
-          <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 700; color: #4a5568; text-align: center;">✨ Choose a Filter:</p>
-          <div id="filterCarousel" style="display: flex; gap: 12px; overflow-x: auto; padding: 8px 0; width: 100%; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; box-sizing: border-box;">
-            <div style="flex: 0 0 calc(50% - 45px); pointer-events: none;"></div>
-            
-            <button type="button" class="filter-btn active" data-filter="none" onclick="selectCarouselFilter('none', this)">Original</button>
-            <button type="button" class="filter-btn" data-filter="rosy" onclick="selectCarouselFilter('rosy', this)">🌸 Rosy</button>
-            <button type="button" class="filter-btn" data-filter="vintage" onclick="selectCarouselFilter('vintage', this)">📸 Retro</button>
-            <button type="button" class="filter-btn" data-filter="warm" onclick="selectCarouselFilter('warm', this)">☀️ Warm</button>
-            <button type="button" class="filter-btn" data-filter="fairytale" onclick="selectCarouselFilter('fairytale', this)">🦄 Dreamy</button>
-            
-            <div style="flex: 0 0 calc(50% - 45px); pointer-events: none;"></div>
-          </div>
-        </div>
-
         <textarea id="photoWishes" placeholder="Write your sweet wishes here... (Optional)" style="margin: 2px 0; width: 100%; min-height: 70px; box-sizing: border-box;"></textarea>
         
         <div class="action-container" style="gap: 8px; width: 100%;">
@@ -1248,7 +1233,7 @@
       currentSelectedFilter = 'none';        // Reset vibe tracker
       
       // Pass to compilation engine
-      renderFilteredBase64();
+      document.getElementById('imagePreview').src = rawSelectedImageSrc;
       
       document.getElementById('sourceSelection').style.display = 'none';
       document.getElementById('photoWorkflow').classList.remove('hidden');
@@ -1373,12 +1358,15 @@
         console.error("Critical Failure: uploadShieldModal element was not found in the DOM.");
       }
       
+      // Bypass filters and use the original unmodified photo
+      const finalImage = rawSelectedImageSrc || compressedImageBase64;
+
       // Package up the exact same data payload
       const payload = {
         type: "Photo",
         name: name,
         wishes: wishes,
-        image: compressedImageBase64
+        image: finalImage
       };
     
       // Replace google.script.run with an HTTP POST request to your script URL
